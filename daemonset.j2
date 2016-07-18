@@ -1,0 +1,35 @@
+{
+  "kind": "DaemonSet",
+  "apiVersion": "extensions/v1beta1",
+  "metadata": {
+    "name": "{{item.name}}",
+    "labels": {
+      "name": "{{item.name}}"
+    }
+  },
+  "spec": {
+    "template": {
+      "metadata": {
+        "name": "{{item.name}}",
+        "labels": {
+          "name": "{{item.name}}"
+        }
+      },
+      "spec": {
+        "containers": {{item.containers | to_nice_json}}
+        {% if item.volumes is defined %}
+        , "volumes": {{item.volumes | to_nice_json}}
+        {% endif %}
+        {% if item.nodeSelector is defined %}
+        , "nodeSelector": {{item.nodeSelector | to_nice_json}}
+        {% endif %}
+        {% if item.hostNetwork is defined %}
+        , "hostNetwork": {{item.hostNetwork | to_nice_json}}
+        {% endif %}
+        {% if item.hostPID is defined %}
+        , "hostPID": {{item.hostPID | to_nice_json}}
+        {% endif %}
+      }
+    }
+  }
+}

@@ -1,0 +1,235 @@
+- name: Kubernetes Playbook
+  hosts: 127.0.0.1
+  connection: local
+  gather_facts: False
+  vars:
+    service_template: "service.j2"
+    service_canary_template: "service-canary.j2"
+    controller_template: "controller.j2"
+    endpoints_template: "endpoints.j2"
+    secret_template: "secret.j2"
+    daemonset_template: "daemonset.j2"
+    deployment_template: "deployment.j2"
+    configmap_template: "configmap.j2"
+    dest_path: /tmp
+    services: []
+    daemonsets: []
+    deployments: []
+    sidecars: []
+    configmaps: []
+  # vars_files:
+  #   - "services.yml"
+  tasks:
+
+    # ConfigMap
+
+    - name: configmap template
+      template: src={{configmap_template}} dest={{dest_path}}/{{item.name}}-configmap.json
+      with_items: "{{ configmaps | default([]) }}"
+      no_log: True
+      tags: [configmap, template]
+
+    - name: apply configmaps
+      command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/' + item.name + '-configmap.json'}}
+      with_items: "{{ configmaps | default([]) }}"
+      no_log: True
+      tags: [configmap]
+
+    # Secrets
+
+    - name: secret template
+      template: src={{secret_template}} dest={{dest_path}}/{{item.name}}-secret.json
+      with_items: "{{ secrets | default([]) }}"
+      no_log: True
+      tags: [secret, template]
+
+    - name: apply secrets
+      command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/' + item.name + '-secret.json'}}
+      with_items: "{{ secrets | default([]) }}"
+      no_log: True
+      tags: [secret]
+
+    # DaemonSets
+
+    - name: daemonset template
+      template: src={{daemonset_template}} dest={{dest_path}}/{{item.name}}-daemonset.json
+      with_items: "{{ daemonsets | default([]) }}"
+      no_log: True
+      tags: [daemonset, template]
+
+    - name: apply daemonsets
+      command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/' + item.name + '-daemonset.json'}}
+      with_items: "{{ daemonsets | default([]) }}"
+      no_log: True
+      tags: [daemonset]
+
+    - name: get daemonsets
+      command: kubectl --server="{{kubernetes_master}}" get daemonsets -o json
+      register: existing_daemonsets
+      no_log: True
+      changed_when: False
+      tags: [daemonset, audit, delete]
+
+    - name: audit daemonsets
+      debug: msg="daemonset {{ item.metadata.name }} was not defined"
+      with_items: "{{ (existing_daemonsets.stdout|from_json)['items'] }}"
+      when: item.metadata.name not in daemonsets|map(attribute='name')
+      no_log: False
+      tags: [daemonset, audit, delete]
+
+    - name: delete undefined daemonsets
+      command: kubectl --server="{{kubernetes_master}}" delete daemonset "{{ item.metadata.name }}"
+      with_items: "{{ (existing_daemonsets.stdout|from_json)['items'] }}"
+      when: daemonsets|length > 0 and item.metadata.name not in daemonsets|map(attribute='name')
+      no_log: False
+      tags: [daemonset, delete]
+
+    # Services
+
+    - name: service template
+      template: src={{service_template}} dest={{dest_path}}/{{item.name}}-service.json
+      with_items: "{{ services | default([]) }}"
+      no_log: True
+      tags: [service, template]
+
+    - name: apply services
+      command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/' + item.name + '-service.json'}}
+      with_items: "{{ services | default([]) }}"
+      no_log: True
+      tags: [service]
+
+    - name: get services
+      command: kubectl --server="{{kubernetes_master}}" get services -l "component!=apiserver,canary!=true" -o json
+      register: existing_services
+      no_log: True
+      changed_when: False
+      tags: [service, audit, delete]
+
+    - name: audit services
+      debug: msg="service {{ item.metadata.name }} was not defined"
+      with_items: "{{ (existing_services.stdout|from_json)['items'] }}"
+      when: item.metadata.name not in services|map(attribute='name')
+      no_log: False
+      tags: [service, audit, delete]
+
+    - name: delete undefined services
+      command: kubectl --server="{{kubernetes_master}}" delete service "{{ item.metadata.name }}"
+      with_items: "{{ (existing_services.stdout|from_json)['items'] }}"
+      when: services|length > 0 and item.metadata.name not in services|map(attribute='name')
+      no_log: False
+      tags: [service, delete]
+
+    # Canary Services
+
+    - name: canary service template
+      template: src={{service_canary_template}} dest={{dest_path}}/{{item.name}}-canary-service.json
+      with_items: "{{ services | default([]) }}"
+      when: item.canary is defined
+      no_log: True
+      tags: [canary, service, template]
+
+    - name: apply canary services
+      command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/' + item.name + '-canary-service.json'}}
+      with_items: "{{ services | default([]) }}"
+      when: item.canary is defined
+      no_log: True
+      tags: [canary, service]
+
+    # Replication Controllers
+
+    - name: controller template
+      template: src={{controller_template}} dest={{dest_path}}/{{item.name}}-controller.json
+      with_items: "{{ services }}"
+      when: item.containers is defined and item.strategy is not defined
+      no_log: True
+      tags: [controller, template]
+
+    - name: apply controllers
+      command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/' + item.name + '-controller.json'}}
+      with_items: "{{ services }}"
+      when: item.containers is defined and item.strategy is not defined
+      no_log: True
+      tags: [controller]
+
+    # - name: delete other replicationControllers
+    #   uri: url={{kubernetes_master}}/api/v1/namespaces/default/replicationcontrollers/{{item.metadata.name}}
+    #   with_items: existing_controllers.json['items']
+    #   when: item.spec.selector.name not in services|map(attribute='name')
+    #   no_log: True
+
+    # Deployments
+
+    - name: deployment template
+      template: src={{deployment_template}} dest={{dest_path}}/{{item.name}}-deployment.json
+      vars:
+        service_name: "{{ item.name }}"
+        containers: "{{ item.containers }}"
+        canary: False
+      with_items: "{{ services }}"
+      when: item.containers is defined and item.strategy is defined
+      no_log: True
+      tags: [deployment, template]
+
+    - name: apply deployments
+      command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/' + item.name + '-deployment.json'}}
+      with_items: "{{ services }}"
+      when: item.containers is defined and item.strategy is defined
+      no_log: True
+      tags: [deployment]
+
+    - name: get deployments
+      command: kubectl --server="{{kubernetes_master}}" get deployments -l "canary!=true" -o json
+      register: existing_deployments
+      no_log: True
+      changed_when: False
+      tags: [deployment, audit, delete]
+
+    - name: audit deployments
+      debug: msg="deployment {{ item.metadata.name }} was not defined"
+      with_items: "{{ (existing_deployments.stdout|from_json)['items'] }}"
+      when: item.metadata.name not in services|map(attribute='name')
+      no_log: False
+      tags: [deployment, audit, delete]
+
+    - name: delete undefined deployments
+      command: kubectl --server="{{kubernetes_master}}" delete deployment "{{ item.metadata.name }}"
+      with_items: "{{ (existing_deployments.stdout|from_json)['items'] }}"
+      when: services|length > 0 and item.metadata.name not in services|map(attribute='name')
+      no_log: False
+      tags: [deployment, delete]
+
+    # Canary Deployments
+
+    - name: canary deployment template
+      template: src={{deployment_template}} dest={{dest_path}}/{{item.name}}-canary-deployment.json
+      vars:
+        service_name: "{{ item.name }}-canary"
+        containers: "{{ item.canary.containers }}"
+        canary: True
+      with_items: "{{ services }}"
+      when: item.canary is defined and item.canary.containers is defined and item.strategy is defined
+      no_log: True
+      tags: [canary, deployment, template]
+
+    - name: apply canary deployments
+      command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/' + item.name + '-canary-deployment.json'}}
+      with_items: "{{ services }}"
+      when: item.canary is defined and item.canary.containers is defined and item.strategy is defined
+      no_log: True
+      tags: [canary, deployment]
+
+    # Endpoints
+
+    - name: endpoints template
+      template: src={{endpoints_template}} dest={{dest_path}}/{{item.name}}-endpoints.json
+      with_items: "{{ services }}"
+      when: item.endpoints is defined
+      no_log: True
+      tags: [endpoint, template]
+
+    - name: apply endpoints
+      command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/' + item.name + '-endpoints.json'}}
+      with_items: "{{ services }}"
+      when: item.endpoints is defined
+      no_log: True
+      tags: [endpoint]

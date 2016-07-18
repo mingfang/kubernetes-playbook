@@ -1,0 +1,24 @@
+{
+  "kind": "Service",
+  "apiVersion": "v1",
+  "metadata":{
+     "name": "{{item.name}}-canary",
+     "labels": {
+        "canary": "true",
+        "canary_of": "{{item.name}}"
+     }
+  },
+  "spec":{
+     {% if item.ports is defined %}
+     "ports":
+        {{ item.ports | to_nice_json }}
+     {% endif %}
+
+     {% if item.canary.containers is defined %}
+     ,
+     "selector": {
+       "name": "{{item.name}}-canary"
+     }
+     {% endif %}
+  }
+}

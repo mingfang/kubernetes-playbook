@@ -1,0 +1,34 @@
+{
+  "kind": "Service",
+  "apiVersion": "v1",
+  "metadata":{
+     "name": "{{item.name}}"
+      {% if item.annotations is defined %}
+      , "annotations":{
+        {% for key, value in item.annotations.iteritems() %}
+          "{{ key }}":"{{ value | to_json | regex_replace('(?<!\\\)\"','\\\"') }}"
+          {% if not loop.last %}, {% endif %}
+        {% endfor %}
+      }
+      {% endif %}
+      {% if item.canary is defined %}
+      , "labels": {
+        "canary_pct": "{{item.canary.pct_traffic|default('1')}}",
+        "primary_pct": "{{100 - item.canary.pct_traffic|default('1')}}"
+      }
+      {% endif %}
+  },
+  "spec":{
+     {% if item.ports is defined %}
+     "ports":
+        {{ item.ports | to_nice_json }}
+     {% endif %}
+
+     {% if item.containers is defined %}
+     ,
+     "selector": {
+       "name": "{{item.name}}"
+     }
+     {% endif %}
+  }
+}
