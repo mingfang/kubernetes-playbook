@@ -27,6 +27,7 @@
       template: src={{configmap_template}} dest={{dest_path}}/{{item.name}}-configmap.json
       with_items: "{{ configmaps | default([]) }}"
       no_log: True
+      changed_when: False
       tags: [configmap, template]
 
     - name: apply configmaps
@@ -41,6 +42,7 @@
       template: src={{secret_template}} dest={{dest_path}}/{{item.name}}-secret.json
       with_items: "{{ secrets | default([]) }}"
       no_log: True
+      changed_when: False
       tags: [secret, template]
 
     - name: apply secrets
@@ -55,6 +57,7 @@
       template: src={{daemonset_template}} dest={{dest_path}}/{{item.name}}-daemonset.json
       with_items: "{{ daemonsets | default([]) }}"
       no_log: True
+      changed_when: False
       tags: [daemonset, template]
 
     - name: apply daemonsets
@@ -90,6 +93,7 @@
       template: src={{service_template}} dest={{dest_path}}/{{item.name}}-service.json
       with_items: "{{ services | default([]) }}"
       no_log: True
+      changed_when: False
       tags: [service, template]
 
     - name: apply services
@@ -126,6 +130,7 @@
       with_items: "{{ services | default([]) }}"
       when: item.canary is defined
       no_log: True
+      changed_when: False
       tags: [canary, service, template]
 
     - name: apply canary services
@@ -142,6 +147,7 @@
       with_items: "{{ services }}"
       when: item.containers is defined and item.strategy is not defined
       no_log: True
+      changed_when: False
       tags: [controller, template]
 
     - name: apply controllers
@@ -168,6 +174,7 @@
       with_items: "{{ services }}"
       when: item.containers is defined and item.strategy is defined
       no_log: True
+      changed_when: False
       tags: [deployment, template]
 
     - name: apply deployments
@@ -209,6 +216,7 @@
       with_items: "{{ services }}"
       when: item.canary is defined and item.canary.containers is defined and item.strategy is defined
       no_log: True
+      changed_when: False
       tags: [canary, deployment, template]
 
     - name: apply canary deployments
@@ -225,6 +233,7 @@
       with_items: "{{ services }}"
       when: item.endpoints is defined
       no_log: True
+      changed_when: False
       tags: [endpoint, template]
 
     - name: apply endpoints
