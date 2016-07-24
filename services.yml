@@ -1167,3 +1167,22 @@ services:
   #   containers:
   #     - name: flink-master
   #       image: tristar:5000/flink-master
+
+  - name: shopware
+    ports:
+      - port: 80
+    annotations:
+      nginx:
+        - http:
+          - server: shopware.*
+            port: 80
+            paths:
+              - path: /
+      icon: https://avatars2.githubusercontent.com/u/612628?v=3&s=200
+    strategy: RollingUpdate
+    replicas: 1
+    containers:
+      - name: shopware
+        image: tristar:5000/shopware:latest
+        scm: git@github.com:mingfang/docker-shopware.git
+
