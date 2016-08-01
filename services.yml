@@ -133,7 +133,6 @@ services:
     containers:
       - name: knginx
         image: tristar:5000/knginx:latest
-        scm: https://github.com/mingfang/docker-knginx.git
         imagePullPolicy: Always
         ports:
           - {containerPort: 80,    hostPort: 80}
@@ -148,6 +147,29 @@ services:
         env:
           - {name: PAGESPEED, value: "on"}
           - {name: LETSENCRYPT_DOMAINS, value: "www.rebelsoft.com|rebelsoft.com"}
+
+  - name: knginx-test
+    ports:
+      - {port: 80, name: http}
+      - {port: 443, name: https}
+      - {port: 90, name: admin}
+    nodeSelector:
+      host: tristar
+    annotations:
+      icon: http://nginx.org/nginx.png
+    strategy: RollingUpdate
+    containers:
+      - name: knginx
+        image: tristar:5000/knginx:latest
+        scm: https://github.com/mingfang/docker-knginx.git
+        imagePullPolicy: Always
+        readinessProbe:
+          httpGet:
+            path: /lb-status
+            port: 80
+          initialDelaySeconds: 10
+        env:
+          - {name: PAGESPEED, value: "on"}
 
   - name: kubernetes-ui
     ports:
