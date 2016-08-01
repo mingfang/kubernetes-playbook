@@ -49,13 +49,18 @@ daemonsets:
     containers:
       - name: jenkins-swarm-client
         image: tristar:5000/jenkins-swarm-client:latest
-        volumeMounts:
-          - {name: docker,  mountPath: /var/run/docker.sock}
         env:
           - {name: MASTER, value: "http://jenkins:8080/jenkins/"}
-          - {name: REGISTRY, value: "{{ REGISTRY }}"}
+        volumeMounts:
+          - {name: docker,  mountPath: /var/run/docker.sock}
+          - {name: jenkins-ssh-key, mountPath: /etc/jenkins-ssh-key, readOnly: true}
+        lifecycle:
+          postStart:
+            exec:
+              command: ["sh", "-c", "mkdir -p /root/.ssh; cp /etc/jenkins-ssh-key/id-rsa /root/.ssh/id_rsa; chmod 0400 /root/.ssh/id_rsa"]
     volumes:
       - {name: docker, hostPath: {path: /var/run/docker.sock}}
+      - {name: jenkins-ssh-key, secret: {secretName: jenkins-ssh-key}}
 
   - name: zabbix-agent
     hostNetwork: true
@@ -68,19 +73,6 @@ daemonsets:
         env:
           - {name: ZABBIX_SERVER, value: zabbix}
           - {name: TZ, value: America/New_York}
-
-  - name: docker-gc
-    containers:
-      - name: gc
-        image: tristar:5000/gc:latest
-        env:
-          - {name: TZ, value: America/New_York}
-        volumeMounts:
-          - {name: docker,  mountPath: /var/run/docker.sock}
-    volumes:
-      - name: docker
-        hostPath:
-          path: /var/run/docker.sock
 
   - name: spark-slave
     containers:
@@ -268,7 +260,7 @@ services:
       - {port: 9999, name: jmx}
     nodeSelector:
       zone: green
-    replicas: 0
+    replicas: 1
     annotations:
       icon: http://kafka.apache.org/images/kafka_logo.png
       depends: [zookeeper]
@@ -487,7 +479,7 @@ services:
       - {port: 9001,  name: fontail}
     nodeSelector:
       zone: green
-    replicas: 0
+    replicas: 1
     annotations:
       nginx:
         - http:
@@ -518,7 +510,7 @@ services:
     replicas: 1
     containers:
       - name: jenkins
-        image: tristar:5000/jenkins:latest
+        image: "tristar:5000/jenkins:latest"
         scm: https://github.com/mingfang/docker-jenkins.git
 
   - name: jenkins
@@ -563,7 +555,7 @@ services:
     ports:
       - {port: 80, name: web}
       - {port: 10051, name: zabbix}
-    replicas: 0
+    replicas: 1
     annotations:
       nginx:
         - http:
@@ -588,7 +580,7 @@ services:
     ports:
       - {port: 80, name: web}
       - {port: 3306, name: mysql}
-    replicas: 0
+    replicas: 1
     annotations:
       nginx:
         - http:
@@ -751,7 +743,7 @@ services:
     ports:
       - {name: http, port: 8080}
       - {name: scribe, port: 1463}
-    replicas: 0
+    replicas: 1
     nodeSelector:
       zone: green
     annotations:
@@ -1175,7 +1167,6 @@ services:
       nginx:
         - http:
           - server: shopware.*
-            port: 80
             paths:
               - path: /
       icon: https://avatars2.githubusercontent.com/u/612628?v=3&s=200
@@ -1185,4 +1176,37 @@ services:
       - name: shopware
         image: tristar:5000/shopware:latest
         scm: git@github.com:mingfang/docker-shopware.git
+
+  - name: magento
+    ports:
+      - port: 80
+    annotations:
+      nginx:
+        - http:
+          - server: magento.*
+            paths:
+              - path: /
+      icon: https://avatars0.githubusercontent.com/u/168457?v=3&s=200
+    strategy: RollingUpdate
+    replicas: 1
+    containers:
+      - name: magento
+        image: tristar:5000/magento:latest
+        scm: git@github.com:mingfang/docker-magento.git
+
+  - name: pokemon-go-map
+    ports:
+      - port: 5000
+    annotations:
+      nginx:
+        - http:
+          - server: pokemon-go-map.*
+            paths:
+              - path: /
+      icon: http://assets.pokemon.com/assets/cms2/img/video-games/video-games/pokemon_go/169.jpg
+    strategy: RollingUpdate
+    replicas: 1
+    containers:
+      - name: pokemon-go-map
+        image: tristar:5000/pokemon-go-map:latest
 
