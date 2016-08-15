@@ -14,6 +14,10 @@ secrets:
   - name: jenkins-ssh-key
     data:
       id-rsa: "{{ jenkins_ssh_key }}"
+  - name: keycloak-add-user
+    data:
+      keycloak-user: "{{keycloak_user}}"
+      keycloak-password: "{{keycloak_password}}"
 
 configmaps:
   - name: global
@@ -133,7 +137,6 @@ services:
     containers:
       - name: knginx
         image: tristar:5000/knginx:latest
-        imagePullPolicy: Always
         ports:
           - {containerPort: 80,    hostPort: 80}
           - {containerPort: 443,    hostPort: 443}
@@ -148,13 +151,13 @@ services:
           - {name: PAGESPEED, value: "on"}
           - {name: LETSENCRYPT_DOMAINS, value: "www.rebelsoft.com|rebelsoft.com"}
 
-  - name: knginx-test
+  - name: intranet
     ports:
       - {port: 80, name: http}
       - {port: 443, name: https}
       - {port: 90, name: admin}
     nodeSelector:
-      host: tristar
+      host: nuc2
     annotations:
       icon: http://nginx.org/nginx.png
     strategy: RollingUpdate
@@ -162,14 +165,19 @@ services:
       - name: knginx
         image: tristar:5000/knginx:latest
         scm: https://github.com/mingfang/docker-knginx.git
-        imagePullPolicy: Always
+        ports:
+          - {containerPort: 80,    hostPort: 80}
+          - {containerPort: 443,    hostPort: 443}
         readinessProbe:
           httpGet:
             path: /lb-status
             port: 80
           initialDelaySeconds: 10
         env:
+          - {name: SAML_IDP_URL, value: "http://keycloak.192.168.1.177.xip.io/auth/realms/master/protocol/saml/clients/intranet-saml"}
           - {name: PAGESPEED, value: "on"}
+        securityContext:
+          privileged: true
 
   - name: kubernetes-ui
     ports:
@@ -200,7 +208,7 @@ services:
     ports:
       - {port: 8080, name: springboot}
       - {port: 10050, name: agent}
-    replicas: 0
+    replicas: 1
     annotations:
       nginx:
         - http:
@@ -225,7 +233,7 @@ services:
       - port: 9000
     nodeSelector:
       zone: green
-    replicas: 0
+    replicas: 1
     annotations:
       nginx:
         - http:
@@ -320,7 +328,7 @@ services:
       - port: 9200
     nodeSelector:
       zone: green
-    replicas: 0
+    replicas: 1
     annotations:
       nginx:
         - http:
@@ -393,7 +401,7 @@ services:
       - port: 9090
     nodeSelector:
       zone: green
-    replicas: 0
+    replicas: 1
     annotations:
       nginx:
         - http:
@@ -408,27 +416,48 @@ services:
       - name: prometheus
         image: tristar:5000/prometheus:latest
         scm: https://github.com/mingfang/docker-prometheus.git
-        imagePullPolicy: Always
+
+  - name: grafana
+    ports:
+      - port: 3000
+    nodeSelector:
+      zone: green
+    replicas: 1
+    annotations:
+      nginx:
+        - http:
+            - server: grafana.*
+              locations:
+                - /
+      icon: http://grafana.org/assets/img/logo_new_transparent_200x48.png
+      group: prometheus
+    strategy: RollingUpdate
+    containers:
+      - name: grafana
+        image: tristar:5000/grafana:latest
+        scm: https://github.com/mingfang/docker-grafana.git
 
   - name: keycloak
     ports:
       - port: 8080
     nodeSelector:
       zone: green
-    replicas: 0
+    replicas: 1
     annotations:
       nginx:
         - http:
             - server: keycloak.*
               locations:
                 - /
-      icon: https://pbs.twimg.com/profile_images/428872865031536641/LMjCu1H7_400x400.png
+      icon: http://www.keycloak.org/resources/images/keycloak_logo_480x108.png
     strategy: RollingUpdate
     containers:
       - name: keycloak
         image: tristar:5000/keycloak:latest
         scm: https://github.com/mingfang/docker-keycloak.git
-        imagePullPolicy: Always
+        env:
+          - {name: KEYCLOAK_USER, valueFrom: {secretKeyRef: {name: keycloak-add-user, key: keycloak-user}}}
+          - {name: KEYCLOAK_PASSWORD, valueFrom: {secretKeyRef: {name: keycloak-add-user, key: keycloak-password}}}
 
   - name: packetbeat
     ports:
@@ -668,7 +697,7 @@ services:
   - name: rtail
     ports:
       - port: 8888
-    replicas: 0
+    replicas: 1
     nodeSelector:
       zone: green
     annotations:
@@ -1231,4 +1260,21 @@ services:
     containers:
       - name: pokemon-go-map
         image: tristar:5000/pokemon-go-map:latest
+
+  - name: sonar
+    ports:
+      - port: 9000
+    annotations:
+      nginx:
+        - http:
+          - server: sonar.*
+            paths:
+              - path: /
+      icon: http://docs.sonarqube.org/s/en_GB/5987/7f4d200af80c8d2bb74491844d32cdca053c56a4.11/_/images/logo/confluence-logo.png
+    strategy: RollingUpdate
+    replicas: 1
+    containers:
+      - name: sonar
+        image: tristar:5000/sonar:latest
+        scm: git@github.com:mingfang/docker-sonar.git
 
