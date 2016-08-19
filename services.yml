@@ -6,6 +6,28 @@ zone-orange: &orange
   nodeSelector:
     zone: orange
 
+limits:
+#  - type: Pod
+#    max:
+#      cpu: "2"
+#      memory: 1Gi
+#    min:
+#      cpu: 200m
+#      memory: 6Mi
+  - type: Container
+#    default:
+#      cpu: 300m
+#      memory: 200Mi
+    defaultRequest:
+      cpu: 200m
+      memory: 100Mi
+#    max:
+#      cpu: "2"
+#      memory: 1Gi
+#    min:
+#      cpu: 100m
+#      memory: 3Mi
+  
 secrets:
   - name: ssh-key-secret
     data:
@@ -341,7 +363,13 @@ services:
       - name: elasticsearch
         image: tristar:5000/elasticsearch:latest
         scm: https://github.com/mingfang/docker-elasticsearch.git
-        imagePullPolicy: Always
+        resources:
+          requests:
+            memory: "1024Mi"
+            cpu: "250m"
+          limits:
+            memory: "4096Mi"
+            cpu: "500m"
         readinessProbe:
           httpGet:
             path: /
@@ -355,7 +383,7 @@ services:
       - port: 5601
     nodeSelector:
       zone: green
-    replicas: 0
+    replicas: 1
     annotations:
       nginx:
         - http:

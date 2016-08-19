@@ -11,7 +11,8 @@
     daemonset_template: "daemonset.j2"
     deployment_template: "deployment.j2"
     configmap_template: "configmap.j2"
-    dest_path: /tmp
+    limits_template: "limits.j2"
+    dest_path: . 
     services: []
     daemonsets: []
     deployments: []
@@ -20,6 +21,21 @@
   # vars_files:
   #   - "services.yml"
   tasks:
+
+    # Limits
+    - name: limits template
+      template: src={{limits_template}} dest={{dest_path}}/limits.json
+      with_items: "{{ limits }}"
+      when: limits is defined
+      no_log: True
+      changed_when: False
+      tags: [limits, template]
+
+    - name: apply limits
+      command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/limits.json'}}
+      when: not ansible_check_mode and limits is defined
+      no_log: True
+      tags: [limits]
 
     # ConfigMap
 
@@ -33,6 +49,7 @@
     - name: apply configmaps
       command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/' + item.name + '-configmap.json'}}
       with_items: "{{ configmaps | default([]) }}"
+      when: not ansible_check_mode
       no_log: True
       tags: [configmap]
 
@@ -48,6 +65,7 @@
     - name: apply secrets
       command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/' + item.name + '-secret.json'}}
       with_items: "{{ secrets | default([]) }}"
+      when: not ansible_check_mode
       no_log: True
       tags: [secret]
 
@@ -63,12 +81,14 @@
     - name: apply daemonsets
       command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/' + item.name + '-daemonset.json'}}
       with_items: "{{ daemonsets | default([]) }}"
+      when: not ansible_check_mode
       no_log: True
       tags: [daemonset]
 
     - name: get daemonsets
       command: kubectl --server="{{kubernetes_master}}" get daemonsets -o json
       register: existing_daemonsets
+      always_run: yes
       no_log: True
       changed_when: False
       tags: [daemonset, audit, delete]
@@ -83,7 +103,7 @@
     - name: delete undefined daemonsets
       command: kubectl --server="{{kubernetes_master}}" delete daemonset "{{ item.metadata.name }}"
       with_items: "{{ (existing_daemonsets.stdout|from_json)['items'] }}"
-      when: daemonsets|length > 0 and item.metadata.name not in daemonsets|map(attribute='name')
+      when: not ansible_check_mode and daemonsets|length > 0 and item.metadata.name not in daemonsets|map(attribute='name')
       no_log: False
       tags: [daemonset, delete]
 
@@ -99,12 +119,14 @@
     - name: apply services
       command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/' + item.name + '-service.json'}}
       with_items: "{{ services | default([]) }}"
+      when: not ansible_check_mode
       no_log: True
       tags: [service]
 
     - name: get services
       command: kubectl --server="{{kubernetes_master}}" get services -l "component!=apiserver,canary!=true" -o json
       register: existing_services
+      always_run: yes
       no_log: True
       changed_when: False
       tags: [service, audit, delete]
@@ -119,7 +141,7 @@
     - name: delete undefined services
       command: kubectl --server="{{kubernetes_master}}" delete service "{{ item.metadata.name }}"
       with_items: "{{ (existing_services.stdout|from_json)['items'] }}"
-      when: services|length > 0 and item.metadata.name not in services|map(attribute='name')
+      when: not ansible_check_mode and services|length > 0 and item.metadata.name not in services|map(attribute='name')
       no_log: False
       tags: [service, delete]
 
@@ -136,7 +158,7 @@
     - name: apply canary services
       command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/' + item.name + '-canary-service.json'}}
       with_items: "{{ services | default([]) }}"
-      when: item.canary is defined
+      when: not ansible_check_mode and item.canary is defined
       no_log: True
       tags: [canary, service]
 
@@ -153,7 +175,7 @@
     - name: apply controllers
       command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/' + item.name + '-controller.json'}}
       with_items: "{{ services }}"
-      when: item.containers is defined and item.strategy is not defined
+      when: not ansible_check_mode and item.containers is defined and item.strategy is not defined
       no_log: True
       tags: [controller]
 
@@ -180,13 +202,14 @@
     - name: apply deployments
       command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/' + item.name + '-deployment.json'}}
       with_items: "{{ services }}"
-      when: item.containers is defined and item.strategy is defined
+      when: not ansible_check_mode and item.containers is defined and item.strategy is defined
       no_log: True
       tags: [deployment]
 
     - name: get deployments
       command: kubectl --server="{{kubernetes_master}}" get deployments -l "canary!=true" -o json
       register: existing_deployments
+      always_run: yes
       no_log: True
       changed_when: False
       tags: [deployment, audit, delete]
@@ -201,7 +224,7 @@
     - name: delete undefined deployments
       command: kubectl --server="{{kubernetes_master}}" delete deployment "{{ item.metadata.name }}"
       with_items: "{{ (existing_deployments.stdout|from_json)['items'] }}"
-      when: services|length > 0 and item.metadata.name not in services|map(attribute='name')
+      when: not ansible_check_mode and services|length > 0 and item.metadata.name not in services|map(attribute='name')
       no_log: False
       tags: [deployment, delete]
 
@@ -222,7 +245,7 @@
     - name: apply canary deployments
       command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/' + item.name + '-canary-deployment.json'}}
       with_items: "{{ services }}"
-      when: item.canary is defined and item.canary.containers is defined and item.strategy is defined
+      when: not ansible_check_mode and item.canary is defined and item.canary.containers is defined and item.strategy is defined
       no_log: True
       tags: [canary, deployment]
 
@@ -239,6 +262,6 @@
     - name: apply endpoints
       command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/' + item.name + '-endpoints.json'}}
       with_items: "{{ services }}"
-      when: item.endpoints is defined
+      when: not ansible_check_mode and item.endpoints is defined
       no_log: True
       tags: [endpoint]
