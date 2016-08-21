@@ -8,9 +8,9 @@
   "data": {{ item.data | to_nice_json }} 
   {% endif %}
 
-  {% if item.from_files is defined %}
+  {% if item['from-files'] is defined %}
   "data": {
-    {% for from_file in item.from_files %}
+    {% for from_file in item['from-files'] %}
     "{{from_file}}": {% filter to_nice_json %}{% include from_file %}{% endfilter %}{% if not loop.last %},
     {% endif %}
     {% endfor %}
