@@ -27,14 +27,14 @@
     - name: limits template
       template: src={{limits_template}} dest={{dest_path}}/limits.json
       with_items: "{{ limits }}"
-      when: limits is defined
       no_log: True
       changed_when: False
       tags: [limits, template]
 
     - name: apply limits
       command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/limits.json'}}
-      when: not ansible_check_mode and limits is defined
+      with_items: "{{ limits }}"
+      when: not ansible_check_mode
       no_log: True
       tags: [limits]
 
