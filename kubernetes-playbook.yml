@@ -18,6 +18,7 @@
     deployments: []
     sidecars: []
     configmaps: []
+    limits: []
   # vars_files:
   #   - "services.yml"
   tasks:
