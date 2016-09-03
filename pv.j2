@@ -1,0 +1,9 @@
+{
+    "kind": "PersistentVolume",
+    "apiVersion": "v1",
+    "metadata": {
+        "name": "{{item.name}}"
+    },
+    "spec": {{item.spec | to_nice_json}}
+}
+
