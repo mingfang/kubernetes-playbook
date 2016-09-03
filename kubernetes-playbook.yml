@@ -1,5 +1,5 @@
 - name: Kubernetes Playbook
-  hosts: 127.0.0.1
+  hosts: localhost
   connection: local
   gather_facts: False
   vars:
@@ -22,6 +22,7 @@
     configmaps: []
     pv: []
     pvs: []
+    limits: []
   # vars_files:
   #   - "services.yml"
   tasks:
@@ -62,14 +63,14 @@
     - name: limits template
       template: src={{limits_template}} dest={{dest_path}}/limits.json
       with_items: "{{ limits }}"
-      when: limits is defined
       no_log: True
       changed_when: False
       tags: [limits, template]
 
     - name: apply limits
       command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/limits.json'}}
-      when: not ansible_check_mode and limits is defined
+      with_items: "{{ limits }}"
+      when: not ansible_check_mode
       no_log: True
       tags: [limits]
 
@@ -227,7 +228,7 @@
       command: kubectl --server="{{kubernetes_master}}" get deployments -l "canary!=true" -o json
       register: existing_deployments
       always_run: yes
-#      no_log: True
+      no_log: True
       changed_when: False
       tags: [deployment, audit, delete, template]
 
@@ -240,7 +241,7 @@
         existing_deployment: "{{ (existing_deployments.stdout|from_json)['items']|selectattr('metadata.name', item.name) }}"
       with_items: "{{ services }}"
       when: item.containers is defined and item.strategy is defined
-#      no_log: True
+      no_log: True
       changed_when: False
       tags: [deployment, template, test]
 
