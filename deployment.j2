@@ -21,7 +21,15 @@
         "labels": {
           "name": "{{service_name}}"
         }
-      },
+        {% if item.podAnnotations is defined %}
+        , "annotations":{
+          {% for key, value in item.podAnnotations.iteritems() %}
+            "{{ key }}":"{{ value | to_json | regex_replace('(?<!\\\)\"','\\\"') }}"
+            {% if not loop.last %}, {% endif %}
+          {% endfor %}
+        }
+        {% endif %}
+       },
       "spec": {
         {# Global ConfigMap as env variables #}
         {% set env = [{"name": "SERVICE_NAME", "value": service_name}, {"name": "LABEL", "value": service_name|upper}] %}
