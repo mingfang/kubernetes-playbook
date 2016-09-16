@@ -20,8 +20,8 @@
     deployments: []
     sidecars: []
     configmaps: []
-    pv: []
-    pvs: []
+    persistentVolumes: []
+    persistentVolumeClaims: []
     limits: []
   # vars_files:
   #   - "services.yml"
