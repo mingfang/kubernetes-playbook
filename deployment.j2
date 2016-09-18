@@ -31,6 +31,10 @@
         {% endif %}
        },
       "spec": {
+        {% if item.terminationGracePeriodSeconds is defined%}
+        "terminationGracePeriodSeconds": {{ item.terminationGracePeriodSeconds }},
+        {% endif %}
+ 
         {# Global ConfigMap as env variables #}
         {% set env = [{"name": "SERVICE_NAME", "value": service_name}, {"name": "LABEL", "value": service_name|upper}] %}
         {% set global = configmaps|default()|selectattr("name", "equalto", "global")|first|default({"data": []}) %}
