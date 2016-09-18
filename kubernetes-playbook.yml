@@ -5,7 +5,6 @@
   vars:
     service_template: "service.j2"
     service_canary_template: "service-canary.j2"
-    controller_template: "controller.j2"
     endpoints_template: "endpoints.j2"
     secret_template: "secret.j2"
     daemonset_template: "daemonset.j2"
@@ -199,29 +198,6 @@
       no_log: True
       tags: [canary, service]
 
-    # Replication Controllers
-
-    - name: controller template
-      template: src={{controller_template}} dest={{dest_path}}/{{item.name}}-controller.json
-      with_items: "{{ services }}"
-      when: item.containers is defined and item.strategy is not defined
-      no_log: True
-      changed_when: False
-      tags: [controller, template]
-
-    - name: apply controllers
-      command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/' + item.name + '-controller.json'}}
-      with_items: "{{ services }}"
-      when: not ansible_check_mode and item.containers is defined and item.strategy is not defined
-      no_log: True
-      tags: [controller]
-
-    # - name: delete other replicationControllers
-    #   uri: url={{kubernetes_master}}/api/v1/namespaces/default/replicationcontrollers/{{item.metadata.name}}
-    #   with_items: existing_controllers.json['items']
-    #   when: item.spec.selector.name not in services|map(attribute='name')
-    #   no_log: True
-
     # Deployments
 
     - name: get deployments
@@ -240,7 +216,7 @@
         canary: False
         existing_deployment: "{{ (existing_deployments.stdout|from_json)['items']|selectattr('metadata.name', item.name) }}"
       with_items: "{{ services }}"
-      when: item.containers is defined and item.strategy is defined
+      when: item.containers is defined
       no_log: True
       changed_when: False
       tags: [deployment, template, test]
@@ -248,7 +224,7 @@
     - name: apply deployments
       command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/' + item.name + '-deployment.json'}}
       with_items: "{{ services }}"
-      when: not ansible_check_mode and item.containers is defined and item.strategy is defined
+      when: not ansible_check_mode and item.containers is defined
       no_log: True
       tags: [deployment]
 
