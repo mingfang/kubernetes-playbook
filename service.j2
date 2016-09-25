@@ -19,6 +19,10 @@
       {% endif %}
   },
   "spec":{
+     {% if item.clusterIP is defined %}
+     "clusterIP": "{{ item.clusterIP }}",
+     {% endif %}
+
      {% if item.ports is defined %}
      "ports":
         {{ item.ports | to_nice_json }}
@@ -29,6 +33,10 @@
      "selector": {
        "name": "{{item.name}}"
      }
+     {% elif item.selector is defined%}
+     ,
+     "selector":
+        {{ item.selector | to_nice_json }}
      {% endif %}
   }
 }
