@@ -225,7 +225,7 @@
       command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/' + item.name + '-deployment.json'}}
       with_items: "{{ services }}"
       when: not ansible_check_mode and item.containers is defined
-      no_log: True
+      no_log: False
       tags: [deployment]
 
     - name: audit deployments
