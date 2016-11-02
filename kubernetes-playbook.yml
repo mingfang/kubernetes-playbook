@@ -156,7 +156,7 @@
       command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/' + item.name + '-service.json'}}
       with_items: "{{ services | default([]) }}"
       when: not ansible_check_mode
-      no_log: True
+      no_log: False
       tags: [service]
 
     - name: get services
