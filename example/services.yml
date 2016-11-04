@@ -1,0 +1,105 @@
+#Example Services
+
+#Set default limits to all services
+limits:
+#  - type: Pod
+#    max:
+#      cpu: "2"
+#      memory: 1Gi
+#    min:
+#      cpu: 200m
+#      memory: 6Mi
+  - type: Container
+#    default:
+#      cpu: 300m
+#      memory: 200Mi
+    defaultRequest:
+      cpu: 200m
+      memory: 100Mi
+#    max:
+#      cpu: "2"
+#      memory: 1Gi
+#    min:
+#      cpu: 100m
+#      memory: 3Mi
+  
+secrets:
+  - name: ssh-key-secret
+    data:
+      id-rsa: "dmFsdWUtMg0KDQo="
+      id-rsa.pub: "dmFsdWUtMQ0K"
+
+#These will be converted as ENV variables for all containers
+configmaps:
+  - name: global
+    data:
+      node-env: production
+      etcd-host: "{{ ETCD_HOST }}"
+      zookeeper: zookeeper:2181
+      tz: America/New_York
+
+#Default volume mounts useful for central logging
+#volumes:
+#  - {name: log, emptyDir: {}}
+
+#volumeMounts:
+#  - {name: log, mountPath: /var/log}
+
+#Sidecars wil be attached to every pod
+#sidecars:
+#  - name: fluentd-kafka
+#    image: rebelsoft.com/fluentd-kafka:latest
+#    volumeMounts:
+#      - {name: log, mountPath: /var/log}
+
+#Daemonsets are useful for monitoring and logging agents
+#daemonsets:
+#  - name: knode-logs
+#    containers:
+#      - name: fluentd-kafka
+#        image: rebelsoft.com/fluentd-kafka:latest
+#        env:
+#          - name: ZOOKEEPER
+#            value: "zookeeper:2181"
+#          - name: LABEL
+#            valueFrom:
+#              nodeFieldRef:
+#                fieldPath: metadata.name
+#        volumeMounts:
+#          - {name: log, mountPath: /var/log}
+#    volumes:
+#      - {name: log, hostPath: {path: /var/log}}
+
+services:
+  - name: knginx
+    ports:
+      - {port: 80, name: http}
+      - {port: 443, name: https}
+    replicas: 1
+    annotations:
+      icon: http://nginx.org/nginx.png
+    containers:
+      - name: knginx
+        image: rebelsoft.com/knginx:latest
+        readinessProbe:
+          httpGet:
+            path: /lb-status
+            port: 80
+          initialDelaySeconds: 10
+        env:
+          - {name: PAGESPEED, value: "on"}
+
+  - name: httpbin
+    ports:
+      - port: 5000
+    replicas: 1
+    annotations:
+      nginx:
+        - http:
+            - server: default
+              paths:
+                - path: /
+    containers:
+      - name: httpbin
+        image: rebelsoft.com/httpbin:latest
+        scm: https://github.com/mingfang/docker-httpbin.git
