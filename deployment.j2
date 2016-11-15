@@ -21,14 +21,18 @@
         "labels": {
           "name": "{{service_name}}"
         }
-        {% if item.podAnnotations is defined %}
         , "annotations":{
+        {% if item.podAnnotations is defined %}
           {% for key, value in item.podAnnotations.iteritems() %}
             "{{ key }}":"{{ value | to_json | regex_replace('(?<!\\\)\"','\\\"') }}"
             {% if not loop.last %}, {% endif %}
           {% endfor %}
-        }
         {% endif %}
+        {% if item.initContainers is defined %}
+        {% if item.podAnnotations is defined %},{% endif %}
+          "pod.beta.kubernetes.io/init-containers": "{{ item.initContainers | to_json | regex_replace('(?<!\\\)\"','\\\"') }}"
+        {% endif %}
+        }
        },
       "spec": {
         {% if item.terminationGracePeriodSeconds is defined%}
