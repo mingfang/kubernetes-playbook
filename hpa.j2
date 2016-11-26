@@ -1,0 +1,17 @@
+{
+    "kind": "HorizontalPodAutoscaler",
+    "apiVersion": "autoscaling/v1",
+    "metadata": {
+        "name": "{{item.name}}"
+    },
+    "spec": {
+        "scaleTargetRef": {
+            "kind": "Deployment",
+            "name": "{{item.name}}",
+            "apiVersion": "extensions/v1beta1"
+        },
+        "minReplicas": {{item.autoscaler.minReplicas|default(1)}},
+        "maxReplicas": {{item.autoscaler.maxReplicas|default(1)}},
+        "targetCPUUtilizationPercentage": {{item.autoscaler.cpu|default(80)}} 
+    }
+}

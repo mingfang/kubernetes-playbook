@@ -9,11 +9,12 @@
     secret_template: "secret.j2"
     daemonset_template: "daemonset.j2"
     deployment_template: "deployment.j2"
+    hpa_template: "hpa.j2"
     configmap_template: "configmap.j2"
     limits_template: "limits.j2"
     pv_template: "pv.j2"
     pvc_template: "pvc.j2"
-    dest_path: .
+    dest_path: /docker
     services: []
     daemonsets: []
     deployments: []
@@ -78,7 +79,7 @@
     - name: configmap template
       template: src={{configmap_template}} dest={{dest_path}}/{{item.name}}-configmap.json
       with_items: "{{ configmaps | default([]) }}"
-      no_log: True
+#      no_log: True
       changed_when: False
       tags: [configmap, template]
 
@@ -262,6 +263,42 @@
       when: not ansible_check_mode and item.canary is defined and item.canary.containers is defined and item.strategy is defined
       no_log: True
       tags: [canary, deployment]
+
+    # Horizontal Pod Autoscaler
+
+    - name: get hpa
+      command: kubectl --server="{{kubernetes_master}}" get hpa -o json
+      register: existing_hpa
+      always_run: yes
+      no_log: True
+      changed_when: False
+      tags: [hpa, audit, delete, template]
+
+    - name: hpa template
+      template: src={{hpa_template}} dest={{dest_path}}/{{item.name}}-hpa.json
+      with_items: "{{ services|selectattr('autoscaler', 'defined')|list }}"
+      changed_when: False
+      tags: [hpa, template, test]
+
+    - name: apply hpa
+      command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/' + item.name + '-hpa.json'}}
+      with_items: "{{ services|selectattr('autoscaler', 'defined')|list }}"
+      when: not ansible_check_mode
+      tags: [hpa]
+
+    - name: audit hpa
+      debug: msg="hpa {{ item.metadata.name }} was not defined"
+      with_items: "{{ (existing_hpa.stdout|from_json)['items'] }}"
+      when: item.metadata.name not in services|selectattr('autoscaler', 'defined')|map(attribute='name')
+      no_log: False
+      tags: [hpa, audit, delete]
+
+    - name: delete undefined hpa
+      command: kubectl --server="{{kubernetes_master}}" delete hpa "{{ item.metadata.name }}"
+      with_items: "{{ (existing_hpa.stdout|from_json)['items'] }}"
+      when: not ansible_check_mode and item.metadata.name not in services|selectattr('autoscaler', 'defined')|map(attribute='name')
+      no_log: False
+      tags: [hpa, delete]
 
     # Endpoints
 
