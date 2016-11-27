@@ -7,8 +7,7 @@
     "spec": {
         "scaleTargetRef": {
             "kind": "Deployment",
-            "name": "{{item.name}}",
-            "apiVersion": "extensions/v1beta1"
+            "name": "{{item.name}}"
         },
         "minReplicas": {{item.autoscaler.minReplicas|default(1)}},
         "maxReplicas": {{item.autoscaler.maxReplicas|default(1)}},
