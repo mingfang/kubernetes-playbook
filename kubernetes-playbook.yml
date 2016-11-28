@@ -2,7 +2,7 @@
   hosts: localhost
   connection: local
   gather_facts: False
-  no_log: True 
+#  no_log: True 
   vars:
     service_template: "service.j2"
     service_canary_template: "service-canary.j2"
@@ -237,24 +237,24 @@
 
     - name: hpa template
       template: src={{hpa_template}} dest={{dest_path}}/{{item.name}}-hpa.json
-      with_items: "{{ services|selectattr('autoscaler', 'defined')|list }}"
+      with_items: "{{ services|selectattr('autoscale', 'defined')|list }}"
       changed_when: False
       tags: [hpa, template, test]
 
     - name: apply hpa
       command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/' + item.name + '-hpa.json'}}
-      with_items: "{{ services|selectattr('autoscaler', 'defined')|list }}"
+      with_items: "{{ services|selectattr('autoscale', 'defined')|list }}"
       when: not ansible_check_mode
       tags: [hpa]
 
     - name: audit hpa
       debug: msg="hpa {{ item.metadata.name }} was not defined"
-      with_items: "{{ (existing_hpa.stdout|from_json)['items']|map(attribute='metadata.name')|difference(services|selectattr('autoscaler', 'defined')|map(attribute='name'))|list }}"
+      with_items: "{{ (existing_hpa.stdout|from_json)['items']|map(attribute='metadata.name')|difference(services|selectattr('autoscale', 'defined')|map(attribute='name'))|list }}"
       tags: [hpa, audit, delete]
 
     - name: delete undefined hpa
       command: kubectl --server="{{kubernetes_master}}" delete hpa "{{ item.metadata.name }}"
-      with_items: "{{ (existing_hpa.stdout|from_json)['items']|map(attribute='metadata.name')|difference(services|selectattr('autoscaler', 'defined')|map(attribute='name'))|list }}"
+      with_items: "{{ (existing_hpa.stdout|from_json)['items']|map(attribute='metadata.name')|difference(services|selectattr('autoscale', 'defined')|map(attribute='name'))|list }}"
       when: not ansible_check_mode
       tags: [hpa, delete]
 

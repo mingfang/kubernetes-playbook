@@ -9,8 +9,8 @@
             "kind": "Deployment",
             "name": "{{item.name}}"
         },
-        "minReplicas": {{item.autoscaler.minReplicas|default(1)}},
-        "maxReplicas": {{item.autoscaler.maxReplicas|default(1)}},
-        "targetCPUUtilizationPercentage": {{item.autoscaler.cpu|default(80)}} 
+        "minReplicas": {{item.autoscale.min|default(1)}},
+        "maxReplicas": {{item.autoscale.max|default(1)}},
+        "targetCPUUtilizationPercentage": {{item.autoscale.cpu|default(80)}} 
     }
 }
