@@ -116,12 +116,12 @@
       tags: [daemonset, audit, delete]
 
     - name: audit daemonsets
-      debug: msg="daemonset {{ item.metadata.name }} was not defined"
+      debug: msg="daemonset {{ item }} was not defined"
       with_items: "{{ (existing_daemonsets.stdout|from_json)['items']|map(attribute='metadata.name')|difference(daemonsets|map(attribute='name'))|list }}"
       tags: [daemonset, audit, delete]
 
     - name: delete undefined daemonsets
-      command: kubectl --server="{{kubernetes_master}}" delete daemonset "{{ item.metadata.name }}"
+      command: kubectl --server="{{kubernetes_master}}" delete daemonset "{{ item }}"
       with_items: "{{ (existing_daemonsets.stdout|from_json)['items']|map(attribute='metadata.name')|difference(daemonsets|map(attribute='name'))|list }}"
       when: not ansible_check_mode
       tags: [daemonset, delete]
@@ -148,7 +148,7 @@
       tags: [service, audit, delete]
 
     - name: audit services
-      debug: msg="service {{ item.metadata.name }} was not defined"
+      debug: msg="service {{ item }} was not defined"
       with_items: "{{ (existing_services.stdout|from_json)['items']|map(attribute='metadata.name')|difference(services|map(attribute='name'))|list }}"
       tags: [service, audit, delete]
 
@@ -198,12 +198,12 @@
       tags: [deployment]
 
     - name: audit deployments
-      debug: msg="deployment {{ item.metadata.name }} was not defined"
+      debug: msg="deployment {{ item }} was not defined"
       with_items: "{{ (existing_deployments.stdout|from_json)['items']|map(attribute='metadata.name')|difference(services|map(attribute='name'))|list }}"
       tags: [deployment, audit, delete]
 
     - name: delete undefined deployments
-      command: kubectl --server="{{kubernetes_master}}" delete deployment "{{ item.metadata.name }}"
+      command: kubectl --server="{{kubernetes_master}}" delete deployment "{{ item }}"
       with_items: "{{ (existing_deployments.stdout|from_json)['items']|map(attribute='metadata.name')|difference(services|map(attribute='name'))|list }}"
       when: not ansible_check_mode
       tags: [deployment, delete]
@@ -248,12 +248,12 @@
       tags: [hpa]
 
     - name: audit hpa
-      debug: msg="hpa {{ item.metadata.name }} was not defined"
+      debug: msg="hpa {{ item }} was not defined"
       with_items: "{{ (existing_hpa.stdout|from_json)['items']|map(attribute='metadata.name')|difference(services|selectattr('autoscale', 'defined')|map(attribute='name'))|list }}"
       tags: [hpa, audit, delete]
 
     - name: delete undefined hpa
-      command: kubectl --server="{{kubernetes_master}}" delete hpa "{{ item.metadata.name }}"
+      command: kubectl --server="{{kubernetes_master}}" delete hpa "{{ item }}"
       with_items: "{{ (existing_hpa.stdout|from_json)['items']|map(attribute='metadata.name')|difference(services|selectattr('autoscale', 'defined')|map(attribute='name'))|list }}"
       when: not ansible_check_mode
       tags: [hpa, delete]
