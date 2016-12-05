@@ -9,8 +9,9 @@
             "kind": "Deployment",
             "name": "{{item.name}}"
         },
-        "minReplicas": {{item.autoscale.min|default(1)}},
-        "maxReplicas": {{item.autoscale.max|default(1)}},
-        "targetCPUUtilizationPercentage": {{item.autoscale.cpu|default(80)}} 
+       {% for key, value in item.autoscaler.iteritems() %}
+       "{{key}}": {% if value is string %}"{% endif %}{{value}}{% if value is string %}"{% endif %}{% if not loop.last %},
+       {% endif %}
+       {% endfor %}
     }
 }
