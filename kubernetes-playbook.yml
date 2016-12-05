@@ -86,12 +86,14 @@
       template: src={{secret_template}} dest={{dest_path}}/{{item.name}}-secret.json
       with_items: "{{ secrets }}"
       changed_when: False
+      no_log: True 
       tags: [secret, template]
 
     - name: apply secrets
       command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/' + item.name + '-secret.json'}}
       with_items: "{{ secrets }}"
       when: not ansible_check_mode
+      no_log: True 
       tags: [secret]
 
     # DaemonSets
@@ -115,16 +117,19 @@
       changed_when: False
       tags: [daemonset, audit, delete]
 
-    - name: audit daemonsets
-      debug: msg="daemonset {{ item }} was not defined"
-      with_items: "{{ (existing_daemonsets.stdout|from_json)['items']|map(attribute='metadata.name')|difference(daemonsets|map(attribute='name'))|list }}"
-      tags: [daemonset, audit, delete]
+    - block:
+        - name: audit daemonsets
+          debug: msg="daemonset {{ item }} was not defined"
+          with_items: "{{ undefined_daemonsets }}"
+          tags: [daemonset, audit, delete]
 
-    - name: delete undefined daemonsets
-      command: kubectl --server="{{kubernetes_master}}" delete daemonset "{{ item }}"
-      with_items: "{{ (existing_daemonsets.stdout|from_json)['items']|map(attribute='metadata.name')|difference(daemonsets|map(attribute='name'))|list }}"
-      when: not ansible_check_mode
-      tags: [daemonset, delete]
+        - name: delete undefined daemonsets
+          command: kubectl --server="{{kubernetes_master}}" delete daemonset "{{ item }}"
+          with_items: "{{ undefined_daemonsets }}"
+          when: not ansible_check_mode
+          tags: [daemonset, delete]
+      vars:
+        undefined_daemonsets: "{{ (existing_daemonsets.stdout|from_json)['items']|map(attribute='metadata.name')|difference(daemonsets|map(attribute='name'))|list }}"
 
     # Services
 
@@ -147,16 +152,19 @@
       changed_when: False
       tags: [service, audit, delete]
 
-    - name: audit services
-      debug: msg="service {{ item }} was not defined"
-      with_items: "{{ (existing_services.stdout|from_json)['items']|map(attribute='metadata.name')|difference(services|map(attribute='name'))|list }}"
-      tags: [service, audit, delete]
+    - block:
+      - name: audit services
+        debug: msg="service {{ item }} was not defined"
+        with_items: "{{ undefined_services }}"
+        tags: [service, audit, delete]
 
-    - name: delete undefined services
-      command: kubectl --server="{{kubernetes_master}}" delete service "{{ item }}"
-      with_items: "{{ (existing_services.stdout|from_json)['items']|map(attribute='metadata.name')|difference(services|map(attribute='name'))|list }}"
-      when: not ansible_check_mode
-      tags: [service, delete]
+      - name: delete undefined services
+        command: kubectl --server="{{kubernetes_master}}" delete service "{{ item }}"
+        with_items: "{{ undefined_services }}"
+        when: not ansible_check_mode
+        tags: [service, delete]
+      vars:
+        undefined_services: "{{ (existing_services.stdout|from_json)['items']|map(attribute='metadata.name')|difference(services|map(attribute='name'))|list }}"
 
     # Canary Services
 
@@ -172,14 +180,14 @@
       when: not ansible_check_mode
       tags: [canary, service]
 
-    # Deployments
-
-    - name: get deployments
-      command: kubectl --server="{{kubernetes_master}}" get deployments -l "canary!=true" -o json
-      register: existing_deployments
-      check_mode: no 
+    - name: get canary services
+      command: kubectl --server="{{kubernetes_master}}" get services -l "component!=apiserver,canary==true" -o json
+      register: existing_carnary_services
+      check_mode: no
       changed_when: False
-      tags: [deployment, audit, delete, template]
+      tags: [canary, audit, delete]
+
+    # Deployments
 
     - name: deployment template
       template: src={{deployment_template}} dest={{dest_path}}/{{item.name}}-deployment.json
@@ -189,7 +197,7 @@
         canary: False
       with_items: "{{ services|selectattr('containers', 'defined')|list }}"
       changed_when: False
-      tags: [deployment, template, test]
+      tags: [deployment, template]
 
     - name: apply deployments
       command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/' + item.name + '-deployment.json'}}
@@ -197,16 +205,26 @@
       when: not ansible_check_mode
       tags: [deployment]
 
-    - name: audit deployments
-      debug: msg="deployment {{ item }} was not defined"
-      with_items: "{{ (existing_deployments.stdout|from_json)['items']|map(attribute='metadata.name')|difference(services|map(attribute='name'))|list }}"
+    - name: get deployments
+      command: kubectl --server="{{kubernetes_master}}" get deployments -l "canary!=true" -o json
+      register: existing_deployments
+      check_mode: no
+      changed_when: False
       tags: [deployment, audit, delete]
 
-    - name: delete undefined deployments
-      command: kubectl --server="{{kubernetes_master}}" delete deployment "{{ item }}"
-      with_items: "{{ (existing_deployments.stdout|from_json)['items']|map(attribute='metadata.name')|difference(services|map(attribute='name'))|list }}"
-      when: not ansible_check_mode
-      tags: [deployment, delete]
+    - block:
+      - name: audit deployments
+        debug: msg="deployment {{ item }} was not defined"
+        with_items: "{{ undefined_deployments }}"
+        tags: [deployment, audit, delete]
+
+      - name: delete undefined deployments
+        command: kubectl --server="{{kubernetes_master}}" delete deployment "{{ item }}"
+        with_items: "{{ undefined_deployments }}"
+        when: not ansible_check_mode
+        tags: [deployment, delete]
+      vars:
+        undefined_deployments: "{{ (existing_deployments.stdout|from_json)['items']|map(attribute='metadata.name')|difference(services|map(attribute='name'))|list }}"
 
     # Canary Deployments
 
@@ -226,37 +244,47 @@
       when: not ansible_check_mode
       tags: [canary, deployment]
 
+    - name: get canary deployments
+      command: kubectl --server="{{kubernetes_master}}" get deployments -l "canary==true" -o json
+      register: existing_canary_deployments
+      check_mode: no
+      changed_when: False
+      tags: [canary, deployment, audit, delete]
+
     # Horizontal Pod Autoscaler
+
+    - name: hpa template
+      template: src={{hpa_template}} dest={{dest_path}}/{{item.name}}-hpa.json
+      with_items: "{{ services|selectattr('autoscaler', 'defined')|list }}"
+      changed_when: False
+      tags: [hpa, template]
+
+    - name: apply hpa
+      command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/' + item.name + '-hpa.json'}}
+      with_items: "{{ services|selectattr('autoscaler', 'defined')|list }}"
+      when: not ansible_check_mode
+      tags: [hpa]
 
     - name: get hpa
       command: kubectl --server="{{kubernetes_master}}" get hpa -o json
       register: existing_hpa
-      check_mode: no 
+      check_mode: no
       changed_when: False
-      tags: [hpa, audit, delete, template]
-
-    - name: hpa template
-      template: src={{hpa_template}} dest={{dest_path}}/{{item.name}}-hpa.json
-      with_items: "{{ services|selectattr('autoscale', 'defined')|list }}"
-      changed_when: False
-      tags: [hpa, template, test]
-
-    - name: apply hpa
-      command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/' + item.name + '-hpa.json'}}
-      with_items: "{{ services|selectattr('autoscale', 'defined')|list }}"
-      when: not ansible_check_mode
-      tags: [hpa]
-
-    - name: audit hpa
-      debug: msg="hpa {{ item }} was not defined"
-      with_items: "{{ (existing_hpa.stdout|from_json)['items']|map(attribute='metadata.name')|difference(services|selectattr('autoscale', 'defined')|map(attribute='name'))|list }}"
       tags: [hpa, audit, delete]
 
-    - name: delete undefined hpa
-      command: kubectl --server="{{kubernetes_master}}" delete hpa "{{ item }}"
-      with_items: "{{ (existing_hpa.stdout|from_json)['items']|map(attribute='metadata.name')|difference(services|selectattr('autoscale', 'defined')|map(attribute='name'))|list }}"
-      when: not ansible_check_mode
-      tags: [hpa, delete]
+    - block:
+      - name: audit hpa
+        debug: msg="hpa {{ item }} was not defined"
+        with_items: "{{ undefined_hpa }}"
+        tags: [hpa, audit, delete]
+
+      - name: delete undefined hpa
+        command: kubectl --server="{{kubernetes_master}}" delete hpa "{{ item }}"
+        with_items: "{{ undefined_hpa }}"
+        when: not ansible_check_mode
+        tags: [hpa, delete]
+      vars:
+        undefined_hpa: "{{ (existing_hpa.stdout|from_json)['items']|map(attribute='metadata.name')|difference(services|selectattr('autoscaler', 'defined')|map(attribute='name'))|list }}"
 
     # Endpoints
 
