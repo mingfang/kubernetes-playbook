@@ -15,6 +15,7 @@
     limits_template: "limits.j2"
     pv_template: "pv.j2"
     pvc_template: "pvc.j2"
+    ns_template: "namespace.j2"
     dest_path: .
     services: []
     daemonsets: []
@@ -25,9 +26,23 @@
     persistentVolumeClaims: []
     limits: []
     secrets: []
+    namespaces: []
 
   tasks:
 
+    # Namespace
+    - name: Namespaces template
+      template: src={{ns_template}} dest={{dest_path}}/{{item.name}}-ns.json
+      with_items: "{{ namespaces }}"
+      changed_when: False
+      tags: [ns, template]
+    
+    - name: Apply Namespaces
+      command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-ns.json 
+      with_items: "{{ namespaces }}"
+      when: not ansible_check_mode
+      tags: [ns]
+      
     # Persistent Volumes
     - name: Persistent Volume template
       template: src={{pv_template}} dest={{dest_path}}/{{item.name}}-pv.json
