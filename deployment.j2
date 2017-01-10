@@ -10,10 +10,10 @@
     {% endif %}
   },
   "spec": {
-    "replicas": {{item.replicas|default(1)}},
-    {% if item.strategy is defined %}
+    "replicas": {{item.pod.replicas|default(1)}},
+    {% if item.pod.strategy is defined %}
     "strategy": {
-      "type": "{{item.strategy}}"
+      "type": "{{item.pod.strategy}}"
     },
     {% endif %}
     "revisionHistoryLimit": 0,
@@ -23,21 +23,21 @@
           "name": "{{service_name}}"
         }
         , "annotations":{
-        {% if item.podAnnotations is defined %}
-          {% for key, value in item.podAnnotations.iteritems() %}
+        {% if item.pod.annotations is defined %}
+          {% for key, value in item.pod.annotations.iteritems() %}
             "{{ key }}":"{{ value | to_json | regex_replace('(?<!\\\)\"','\\\"') }}"
             {% if not loop.last %}, {% endif %}
           {% endfor %}
         {% endif %}
-        {% if item.initContainers is defined %}
-        {% if item.podAnnotations is defined %},{% endif %}
-          "pod.beta.kubernetes.io/init-containers": "{{ item.initContainers | to_json | regex_replace('(?<!\\\)\"','\\\"') }}"
+        {% if item.pod.initContainers is defined %}
+        {% if item.pod.annotations is defined %},{% endif %}
+          "pod.beta.kubernetes.io/init-containers": "{{ item.pod.initContainers | to_json | regex_replace('(?<!\\\)\"','\\\"') }}"
         {% endif %}
         }
        },
       "spec": {
-        {% if item.terminationGracePeriodSeconds is defined%}
-        "terminationGracePeriodSeconds": {{ item.terminationGracePeriodSeconds }},
+        {% if item.pod.terminationGracePeriodSeconds is defined%}
+        "terminationGracePeriodSeconds": {{ item.pod.terminationGracePeriodSeconds }},
         {% endif %}
  
         {# Global ConfigMap as env variables #}
@@ -49,10 +49,10 @@
 
         {# Sidecar Containers #}
         {% if sidecars %}
-          {% set _dummy = containers.extend(sidecars) %}
+          {% set _dummy = pod.containers.extend(sidecars) %}
         {% endif %}
         "containers": [
-          {% for container in containers %}
+          {% for container in pod.containers %}
           {% if container.env is defined %}
             {% set _dummy = container.update({"env": container.env|union(env)}) %}
           {% else %}

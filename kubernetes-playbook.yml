@@ -209,15 +209,15 @@
       template: src={{deployment_template}} dest={{dest_path}}/{{item.name}}-deployment.json
       vars:
         service_name: "{{ item.name }}"
-        containers: "{{ item.containers }}"
+        pod: "{{ item.pod }}"
         canary: False
-      with_items: "{{ services|selectattr('containers', 'defined')|list }}"
+      with_items: "{{ services|selectattr('pod', 'defined')|list }}"
       changed_when: False
       tags: [deployment, template]
 
     - name: apply deployments
       command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/' + item.name + '-deployment.json'}}
-      with_items: "{{ services|selectattr('containers', 'defined')|list }}"
+      with_items: "{{ services|selectattr('pod', 'defined')|list }}"
       when: not ansible_check_mode
       tags: [deployment]
 
@@ -248,7 +248,7 @@
       template: src={{deployment_template}} dest={{dest_path}}/{{item.name}}-canary-deployment.json
       vars:
         service_name: "{{ item.name }}-canary"
-        containers: "{{ item.canary.containers }}"
+        pod: "{{ item.canary }}"
         canary: True
       with_items: "{{ services|selectattr('canary', 'defined')|list }}"
       changed_when: False
