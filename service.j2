@@ -28,7 +28,7 @@
         {{ item.ports | to_nice_json }}
      {% endif %}
 
-     {% if item.containers is defined %}
+     {% if item.pod.containers is defined %}
      ,
      "selector": {
        "name": "{{item.name}}"
