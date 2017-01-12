@@ -11,7 +11,7 @@
         {% endfor %}
       }
       {% endif %}
-      {% if item.pod and item.pod.canary is defined %}
+      {% if item.pod is defined and item.pod.canary is defined %}
       , "labels": {
         "canary_pct": "{{item.pod.canary.pct_traffic|default('1')}}",
         "primary_pct": "{{100 - item.pod.canary.pct_traffic|default('1')}}"
@@ -28,7 +28,7 @@
         {{ item.ports | to_nice_json }}
      {% endif %}
 
-     {% if item.pod and item.pod.containers is defined %}
+     {% if item.pod is defined and item.pod.containers is defined %}
      ,
      "selector": {
        "name": "{{item.name}}"
