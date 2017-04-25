@@ -30,6 +30,9 @@
         , "hostPID": {{item.hostPID | to_nice_json}}
         {% endif %}
       }
+    },
+    "updateStrategy": {
+      "type": "RollingUpdate"
     }
   }
 }
