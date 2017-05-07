@@ -15,8 +15,9 @@
     limits_template: "limits.j2"
     pv_template: "pv.j2"
     pvc_template: "pvc.j2"
-    ns_template: "namespace.j2"
-    dest_path: .
+    namespace_template: "namespace.j2"
+    networkpolicy_template: "networkpolicy.j2"
+    dest_path: /docker
     services: []
     daemonsets: []
     deployments: []
@@ -27,21 +28,22 @@
     limits: []
     secrets: []
     namespaces: []
+    networkpolicies: []
 
   tasks:
 
     # Namespace
     - name: Namespaces template
-      template: src={{ns_template}} dest={{dest_path}}/{{item.name}}-ns.json
+      template: src={{namespace_template}} dest={{dest_path}}/{{item.name}}-namespace.json
       with_items: "{{ namespaces }}"
       changed_when: False
-      tags: [ns, template]
+      tags: [namespaces, template]
     
     - name: Apply Namespaces
-      command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-ns.json 
+      command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-namespace.json 
       with_items: "{{ namespaces }}"
       when: not ansible_check_mode
-      tags: [ns]
+      tags: [namespaces]
       
     # Persistent Volumes
     - name: Persistent Volume template
@@ -67,6 +69,7 @@
       command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-pvc.json
       with_items: "{{ persistentVolumeClaims }}"
       when: not ansible_check_mode
+      ignore_errors: yes
       tags: [pvc]
 
     # Limits
@@ -77,7 +80,7 @@
       tags: [limits, template]
 
     - name: apply limits
-      command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/limits.json'}}
+      command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/limits.json
       with_items: "{{ limits }}"
       when: not ansible_check_mode
       tags: [limits]
@@ -91,7 +94,7 @@
       tags: [configmap, template]
 
     - name: apply configmaps
-      command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/' + item.name + '-configmap.json'}}
+      command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-configmap.json
       with_items: "{{ configmaps }}"
       when: not ansible_check_mode
       tags: [configmap]
@@ -106,7 +109,7 @@
       tags: [secret, template]
 
     - name: apply secrets
-      command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/' + item.name + '-secret.json'}}
+      command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-secret.json
       with_items: "{{ secrets }}"
       when: not ansible_check_mode
       no_log: True 
@@ -121,7 +124,7 @@
       tags: [daemonset, template]
 
     - name: apply daemonsets
-      command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/' + item.name + '-daemonset.json'}}
+      command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-daemonset.json
       with_items: "{{ daemonsets }}"
       when: not ansible_check_mode
       tags: [daemonset]
@@ -156,7 +159,7 @@
       tags: [service, template]
 
     - name: apply services
-      command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/' + item.name + '-service.json'}}
+      command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-service.json
       with_items: "{{ services }}"
       when: not ansible_check_mode
       tags: [service]
@@ -191,7 +194,7 @@
       tags: [canary, service, template]
 
     - name: apply canary services
-      command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/' + item.name + '-canary-service.json'}}
+      command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-canary-service.json
       with_items: "{{ services|selectattr('canary', 'defined')|list }}"
       when: not ansible_check_mode
       tags: [canary, service]
@@ -216,7 +219,7 @@
       tags: [deployment, template]
 
     - name: apply deployments
-      command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/' + item.name + '-deployment.json'}}
+      command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-deployment.json
       with_items: "{{ services|selectattr('pod', 'defined')|list }}"
       when: not ansible_check_mode
       tags: [deployment]
@@ -255,7 +258,7 @@
       tags: [canary, deployment, template]
 
     - name: apply canary deployments
-      command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/' + item.name + '-canary-deployment.json'}}
+      command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-canary-deployment.json
       with_items: "{{ services|selectattr('canary', 'defined')|list }}"
       when: not ansible_check_mode
       tags: [canary, deployment]
@@ -267,6 +270,14 @@
       changed_when: False
       tags: [canary, deployment, audit, delete]
 
+    # Network Policies
+
+    - name: networkpolicy template
+      template: src={{networkpolicy_template}} dest={{dest_path}}/{{item.name}}-networkpolicy.json
+      with_items: "{{ services|selectattr('networkpolicy', 'defined')|list }}"
+      changed_when: False
+      tags: [networkpolicy, template]
+
     # Horizontal Pod Autoscaler
 
     - name: hpa template
@@ -276,7 +287,7 @@
       tags: [hpa, template]
 
     - name: apply hpa
-      command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/' + item.name + '-hpa.json'}}
+      command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-hpa.json
       with_items: "{{ services|selectattr('autoscaler', 'defined')|list }}"
       when: not ansible_check_mode
       tags: [hpa]
@@ -311,7 +322,7 @@
       tags: [endpoint, template]
 
     - name: apply endpoints
-      command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path + '/' + item.name + '-endpoints.json'}}
+      command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-endpoints.json
       with_items: "{{ services|selectattr('endpoints', 'defined')|list }}"
       when: not ansible_check_mode
       tags: [endpoint]
