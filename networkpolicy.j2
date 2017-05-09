@@ -1,0 +1,38 @@
+{
+    "kind": "NetworkPolicy",
+    "apiVersion": "extensions/v1beta1",
+    "metadata": {
+        "name": "{{item.name}}"
+    },
+    "spec": {
+      "podSelector": {
+        "matchLabels": {
+          "name":  "{{item.name}}"
+        }
+      },
+      "ingress": [{
+        {% if item.networkpolicy is defined and item.networkpolicy.from is defined %}
+        "from": [
+          {% for from in item.networkpolicy.from %}
+          {
+            "podSelector": {
+              "matchLabels": {
+                "name": "{{ from }}"
+              }
+            }
+          }{% if not loop.last %}, {% endif %}
+          {% endfor %}
+        ]
+        {% endif %}
+        {% if item.networkpolicy is defined and item.networkpolicy.ports is defined %}
+        , "ports": [
+          {% for port in item.networkpolicy.ports %}
+          {
+            "port": {{ port }}
+          }{% if not loop.last %}, {% endif %}
+          {% endfor %}
+        ]
+        {% endif %}
+      }]
+    }
+}
