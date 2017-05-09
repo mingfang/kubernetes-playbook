@@ -2,6 +2,7 @@
   hosts: localhost
   connection: local
   gather_facts: False
+  strategy: debug
 #  no_log: True 
   vars:
     service_template: "service.j2"
@@ -36,39 +37,42 @@
     - name: Namespaces template
       template: src={{namespace_template}} dest={{dest_path}}/{{item.name}}-namespace.json
       with_items: "{{ namespaces }}"
+      when: item != None
       changed_when: False
       tags: [namespaces, template]
     
     - name: Apply Namespaces
       command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-namespace.json 
       with_items: "{{ namespaces }}"
-      when: not ansible_check_mode
+      when: item != None and not ansible_check_mode
       tags: [namespaces]
       
     # Persistent Volumes
     - name: Persistent Volume template
       template: src={{pv_template}} dest={{dest_path}}/{{item.name}}-pv.json
       with_items: "{{ persistentVolumes }}"
+      when: item != None
       changed_when: False
       tags: [pv, template]
     
     - name: Apply Persistent Volumes
       command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-pv.json 
       with_items: "{{ persistentVolumes }}"
-      when: not ansible_check_mode
+      when: item != None and not ansible_check_mode
       tags: [pv]
 
     # Persistent Volume Claims
     - name: Persistent Volume Claim template
       template: src={{pvc_template}} dest={{dest_path}}/{{item.name}}-pvc.json
       with_items: "{{ persistentVolumeClaims }}"
+      when: item != None
       changed_when: False
       tags: [pvc, template]
 
     - name: Apply Persistent Volume Claims
       command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-pvc.json
       with_items: "{{ persistentVolumeClaims }}"
-      when: not ansible_check_mode
+      when: item != None and not ansible_check_mode
       ignore_errors: yes
       tags: [pvc]
 
@@ -76,13 +80,14 @@
     - name: limits template
       template: src={{limits_template}} dest={{dest_path}}/limits.json
       with_items: "{{ limits }}"
+      when: item != None
       changed_when: False
       tags: [limits, template]
 
     - name: apply limits
       command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/limits.json
       with_items: "{{ limits }}"
-      when: not ansible_check_mode
+      when: item != None and not ansible_check_mode
       tags: [limits]
 
     # ConfigMap
@@ -90,13 +95,14 @@
     - name: configmap template
       template: src={{configmap_template}} dest={{dest_path}}/{{item.name}}-configmap.json
       with_items: "{{ configmaps }}"
+      when: item != None
       changed_when: False
       tags: [configmap, template]
 
     - name: apply configmaps
       command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-configmap.json
       with_items: "{{ configmaps }}"
-      when: not ansible_check_mode
+      when: item != None and not ansible_check_mode
       tags: [configmap]
 
     # Secrets
@@ -104,6 +110,7 @@
     - name: secret template
       template: src={{secret_template}} dest={{dest_path}}/{{item.name}}-secret.json
       with_items: "{{ secrets }}"
+      when: item != None
       changed_when: False
       no_log: True 
       tags: [secret, template]
@@ -111,7 +118,7 @@
     - name: apply secrets
       command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-secret.json
       with_items: "{{ secrets }}"
-      when: not ansible_check_mode
+      when: item != None and not ansible_check_mode
       no_log: True 
       tags: [secret]
 
@@ -120,13 +127,14 @@
     - name: daemonset template
       template: src={{daemonset_template}} dest={{dest_path}}/{{item.name}}-daemonset.json
       with_items: "{{ daemonsets }}"
+      when: item != None
       changed_when: False
       tags: [daemonset, template]
 
     - name: apply daemonsets
       command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-daemonset.json
       with_items: "{{ daemonsets }}"
-      when: not ansible_check_mode
+      when: item != None and not ansible_check_mode
       tags: [daemonset]
 
     - name: get daemonsets
@@ -140,12 +148,13 @@
         - name: audit daemonsets
           debug: msg="daemonset {{ item }} was not defined"
           with_items: "{{ undefined_daemonsets }}"
+          when: item != None
           tags: [daemonset, audit, delete]
 
         - name: delete undefined daemonsets
           command: kubectl --server="{{kubernetes_master}}" delete daemonset "{{ item }}"
           with_items: "{{ undefined_daemonsets }}"
-          when: not ansible_check_mode
+          when: item != None and not ansible_check_mode
           tags: [daemonset, delete]
       vars:
         undefined_daemonsets: "{{ (existing_daemonsets.stdout|from_json)['items']|map(attribute='metadata.name')|difference(daemonsets|map(attribute='name'))|list }}"
@@ -155,13 +164,14 @@
     - name: service template
       template: src={{service_template}} dest={{dest_path}}/{{item.name}}-service.json
       with_items: "{{ services }}"
+      when: item != None
       changed_when: False
       tags: [service, template]
 
     - name: apply services
       command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-service.json
       with_items: "{{ services }}"
-      when: not ansible_check_mode
+      when: item != None and not ansible_check_mode
       tags: [service]
 
     - name: get services
@@ -175,12 +185,13 @@
       - name: audit services
         debug: msg="service {{ item }} was not defined"
         with_items: "{{ undefined_services }}"
+        when: item != None
         tags: [service, audit, delete]
 
       - name: delete undefined services
         command: kubectl --server="{{kubernetes_master}}" delete service "{{ item }}"
         with_items: "{{ undefined_services }}"
-        when: not ansible_check_mode
+        when: item != None and not ansible_check_mode
         tags: [service, delete]
       vars:
         undefined_services: "{{ (existing_services.stdout|from_json)['items']|map(attribute='metadata.name')|difference(services|map(attribute='name'))|list }}"
@@ -190,13 +201,14 @@
     - name: canary service template
       template: src={{service_canary_template}} dest={{dest_path}}/{{item.name}}-canary-service.json
       with_items: "{{ services|selectattr('canary', 'defined')|list }}"
+      when: item != None
       changed_when: False
       tags: [canary, service, template]
 
     - name: apply canary services
       command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-canary-service.json
       with_items: "{{ services|selectattr('canary', 'defined')|list }}"
-      when: not ansible_check_mode
+      when: item != None and not ansible_check_mode
       tags: [canary, service]
 
     - name: get canary services
@@ -215,13 +227,14 @@
         pod: "{{ item.pod }}"
         canary: False
       with_items: "{{ services|selectattr('pod', 'defined')|list }}"
+      when: item != None
       changed_when: False
       tags: [deployment, template]
 
     - name: apply deployments
       command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-deployment.json
       with_items: "{{ services|selectattr('pod', 'defined')|list }}"
-      when: not ansible_check_mode
+      when: item != None and not ansible_check_mode
       tags: [deployment]
 
     - name: get deployments
@@ -235,12 +248,13 @@
       - name: audit deployments
         debug: msg="deployment {{ item }} was not defined"
         with_items: "{{ undefined_deployments }}"
+        when: item != None
         tags: [deployment, audit, delete]
 
       - name: delete undefined deployments
         command: kubectl --server="{{kubernetes_master}}" delete deployment "{{ item }}"
         with_items: "{{ undefined_deployments }}"
-        when: not ansible_check_mode
+        when: item != None and not ansible_check_mode
         tags: [deployment, delete]
       vars:
         undefined_deployments: "{{ (existing_deployments.stdout|from_json)['items']|map(attribute='metadata.name')|difference(services|map(attribute='name'))|list }}"
@@ -254,13 +268,14 @@
         pod: "{{ item.canary }}"
         canary: True
       with_items: "{{ services|selectattr('canary', 'defined')|list }}"
+      when: item != None
       changed_when: False
       tags: [canary, deployment, template]
 
     - name: apply canary deployments
       command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-canary-deployment.json
       with_items: "{{ services|selectattr('canary', 'defined')|list }}"
-      when: not ansible_check_mode
+      when: item != None and not ansible_check_mode
       tags: [canary, deployment]
 
     - name: get canary deployments
@@ -275,6 +290,7 @@
     - name: networkpolicy template
       template: src={{networkpolicy_template}} dest={{dest_path}}/{{item.name}}-networkpolicy.json
       with_items: "{{ services|selectattr('networkpolicy', 'defined')|list }}"
+      when: item != None
       changed_when: False
       tags: [networkpolicy, template]
 
@@ -283,13 +299,14 @@
     - name: hpa template
       template: src={{hpa_template}} dest={{dest_path}}/{{item.name}}-hpa.json
       with_items: "{{ services|selectattr('autoscaler', 'defined')|list }}"
+      when: item != None
       changed_when: False
       tags: [hpa, template]
 
     - name: apply hpa
       command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-hpa.json
       with_items: "{{ services|selectattr('autoscaler', 'defined')|list }}"
-      when: not ansible_check_mode
+      when: item != None and not ansible_check_mode
       tags: [hpa]
 
     - name: get hpa
@@ -303,12 +320,13 @@
       - name: audit hpa
         debug: msg="hpa {{ item }} was not defined"
         with_items: "{{ undefined_hpa }}"
+        when: item != None
         tags: [hpa, audit, delete]
 
       - name: delete undefined hpa
         command: kubectl --server="{{kubernetes_master}}" delete hpa "{{ item }}"
         with_items: "{{ undefined_hpa }}"
-        when: not ansible_check_mode
+        when: item != None and not ansible_check_mode
         tags: [hpa, delete]
       vars:
         undefined_hpa: "{{ (existing_hpa.stdout|from_json)['items']|map(attribute='metadata.name')|difference(services|selectattr('autoscaler', 'defined')|map(attribute='name'))|list }}"
@@ -318,11 +336,12 @@
     - name: endpoints template
       template: src={{endpoints_template}} dest={{dest_path}}/{{item.name}}-endpoints.json
       with_items: "{{ services|selectattr('endpoints', 'defined')|list }}"
+      when: item != None
       changed_when: False
       tags: [endpoint, template]
 
     - name: apply endpoints
       command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-endpoints.json
       with_items: "{{ services|selectattr('endpoints', 'defined')|list }}"
-      when: not ansible_check_mode
+      when: item != None and not ansible_check_mode
       tags: [endpoint]
