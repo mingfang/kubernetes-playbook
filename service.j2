@@ -38,5 +38,10 @@
      "selector":
         {{ item.selector | to_nice_json }}
      {% endif %}
+     
+     {% if item.type is defined %}
+     ,
+     "type": "{{ item.type }}"
+     {% endif %}
   }
 }
