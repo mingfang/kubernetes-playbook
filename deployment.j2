@@ -29,10 +29,6 @@
             {% if not loop.last %}, {% endif %}
           {% endfor %}
         {% endif %}
-        {% if item.pod.initContainers is defined %}
-        {% if item.pod.annotations is defined %},{% endif %}
-          "pod.beta.kubernetes.io/init-containers": "{{ item.pod.initContainers | to_json | regex_replace('(?<!\\\)\"','\\\"') }}"
-        {% endif %}
         }
        },
       "spec": {
@@ -76,6 +72,13 @@
           {{container | to_nice_json}}{% if not loop.last %},{% endif %}
           {% endfor %}
         ]
+
+        {% if item.pod.initContainers is defined %}
+        ,
+        "initContainers":
+          {{ item.pod.initContainers | to_json }}
+        {% endif %}
+
         {# Global Volumes #}
         {% if volumes is defined %}
           {% set _volumes = volumes %}
