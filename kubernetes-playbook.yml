@@ -3,7 +3,7 @@
   connection: local
   gather_facts: False
   strategy: debug
-#  no_log: True 
+  no_log: False 
   vars:
     service_template: "service.j2"
     service_canary_template: "service-canary.j2"
@@ -18,6 +18,7 @@
     pvc_template: "pvc.j2"
     namespace_template: "namespace.j2"
     networkpolicy_template: "networkpolicy.j2"
+    podpresets_template: "podpresets.j2"
     dest_path: /docker
     services: []
     daemonsets: []
@@ -30,6 +31,7 @@
     secrets: []
     namespaces: []
     networkpolicies: []
+    podpresets: []
 
   tasks:
 
@@ -121,6 +123,23 @@
       when: item != None and not ansible_check_mode
       no_log: True 
       tags: [secret]
+
+    # PodPresets
+
+    - name: podpresets template
+      template: src={{podpresets_template}} dest={{dest_path}}/{{item.name}}-podpresets.json
+      with_items: "{{ podpresets }}"
+      when: item != None
+      changed_when: False
+      no_log: True
+      tags: [podpresets, template]
+
+    - name: apply podpresets
+      command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-podpresets.json
+      with_items: "{{ podpresets }}"
+      when: item != None and not ansible_check_mode
+      no_log: False
+      tags: [podpresets]
 
     # DaemonSets
 
