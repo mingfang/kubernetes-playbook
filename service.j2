@@ -31,7 +31,8 @@
      {% if item.pod is defined and item.pod.containers is defined %}
      ,
      "selector": {
-       "name": "{{item.name}}"
+       "name": "{{item.name}}",
+       "service": "{{item.name}}"
      }
      {% elif item.selector is defined%}
      ,

@@ -20,7 +20,8 @@
     "template": {
       "metadata": {
         "labels": {
-          "name": "{{service_name}}"
+          "name": "{{service_name}}",
+          "service": "{{service_name}}"
         }
         , "annotations":{
         {% if item.pod.annotations is defined %}

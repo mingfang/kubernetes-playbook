@@ -7,7 +7,8 @@
     "spec": {
       "podSelector": {
         "matchLabels": {
-          "name":  "{{item.name}}"
+          "name":  "{{item.name}}",
+          "service":  "{{item.name}}"
         }
       },
       "ingress": [{
