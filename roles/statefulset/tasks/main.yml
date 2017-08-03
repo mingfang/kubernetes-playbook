@@ -1,0 +1,48 @@
+---
+# tasks file for statefulset
+
+- name: set statefulsets
+  set_fact:
+    statefulsets: "{{ services|selectattr('stateful', 'defined')|list }}"
+  changed_when: False
+  tags: [statefulset, audit, delete]
+
+- name: statefulset template
+  template:
+    src=templates/statefulset.j2
+    dest={{dest_path}}/{{item.name}}-statefulset.json
+  vars:
+    service_name: "{{ item.name }}"
+    pod: "{{ item.pod }}"
+  with_items: "{{ statefulsets }}"
+  when: item != None
+  changed_when: False
+  tags: [statefulset, template]
+
+- name: apply statefulset
+  command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-statefulset.json
+  with_items: "{{ statefulsets }}"
+  when: item != None and not ansible_check_mode
+  tags: [statefulset]
+
+- name: get statefulsets
+  command: kubectl --server="{{kubernetes_master}}" get statefulsets -o json
+  register: existing_statefulsets
+  check_mode: no
+  changed_when: False
+  tags: [statefulsets, audit, delete]
+
+- block:
+  - name: audit statefulsets
+    debug: msg="statefulset {{ item }} was not defined"
+    with_items: "{{ undefined_statefulsets }}"
+    when: item != None
+    tags: [statefulsets, audit, delete]
+
+  - name: delete undefined statefulsets
+    command: kubectl --server="{{kubernetes_master}}" delete statefulsets "{{ item }}"
+    with_items: "{{ undefined_statefulsets }}"
+    when: item != None and not ansible_check_mode
+    tags: [statefulsets, delete]
+  vars:
+    undefined_statefulsets: "{{ (existing_statefulsets.stdout|from_json)['items']|map(attribute='metadata.name')|difference(statefulsets|map(attribute='name'))|list }}"

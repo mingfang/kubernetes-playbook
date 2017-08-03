@@ -1,0 +1,37 @@
+---
+# tasks file for persistentvolume
+
+# Persistent Volume Claims
+
+- name: Persistent Volume template
+  template:
+    src=templates/pv.j2
+    dest={{dest_path}}/{{item.name}}-pv.json
+  with_items: "{{ persistentVolumes }}"
+  when: item != None
+  changed_when: False
+  tags: [pv, template]
+
+- name: Apply Persistent Volumes
+  command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-pv.json
+  with_items: "{{ persistentVolumes }}"
+  when: item != None and not ansible_check_mode
+  tags: [pv]
+
+# Persistent Volume Claims
+
+- name: Persistent Volume Claim template
+  template:
+    src=templates/pvc.j2
+    dest={{dest_path}}/{{item.name}}-pvc.json
+  with_items: "{{ persistentVolumeClaims }}"
+  when: item != None
+  changed_when: False
+  tags: [pvc, template]
+
+- name: Apply Persistent Volume Claims
+  command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-pvc.json
+  with_items: "{{ persistentVolumeClaims }}"
+  when: item != None and not ansible_check_mode
+  ignore_errors: yes
+  tags: [pvc]

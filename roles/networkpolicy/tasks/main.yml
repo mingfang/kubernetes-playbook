@@ -1,0 +1,17 @@
+---
+# tasks file for networkpolicy
+
+- name: set
+  set_fact:
+    networkpolicies: "{{ services|selectattr('networkpolicy', 'defined')|list }}"
+  changed_when: False
+  tags: [deployment, audit, delete]
+
+- name: networkpolicy template
+  template:
+    src=templates/networkpolicy.j2
+    dest={{dest_path}}/{{item.name}}-networkpolicy.json
+  with_items: "{{ networkpolicies }}"
+  when: item != None
+  changed_when: False
+  tags: [networkpolicy, template]

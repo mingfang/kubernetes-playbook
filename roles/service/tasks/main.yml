@@ -1,0 +1,65 @@
+---
+# tasks file for service
+
+# Services
+
+- name: service template
+  template:
+    src=templates/service.j2
+     dest={{dest_path}}/{{item.name}}-service.json
+  with_items: "{{ services }}"
+  when: item != None
+  changed_when: False
+  tags: [service, template]
+
+- name: apply services
+  command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-service.json
+  with_items: "{{ services }}"
+  when: item != None and not ansible_check_mode
+  tags: [service]
+
+- name: get services
+  command: kubectl --server="{{kubernetes_master}}" get services -l "component!=apiserver,canary!=true" -o json
+  register: existing_services
+  check_mode: no
+  changed_when: False
+  tags: [service, audit, delete]
+
+- block:
+  - name: audit services
+    debug: msg="service {{ item }} was not defined"
+    with_items: "{{ undefined_services }}"
+    when: item != None
+    tags: [service, audit, delete]
+
+  - name: delete undefined services
+    command: kubectl --server="{{kubernetes_master}}" delete service "{{ item }}"
+    with_items: "{{ undefined_services }}"
+    when: item != None and not ansible_check_mode
+    tags: [service, delete]
+  vars:
+    undefined_services: "{{ (existing_services.stdout|from_json)['items']|map(attribute='metadata.name')|difference(services|map(attribute='name'))|list }}"
+
+# Canary Services
+
+- name: canary service template
+  template:
+    src=templates/service-canary.j2
+    dest={{dest_path}}/{{item.name}}-canary-service.json
+  with_items: "{{ services|selectattr('canary', 'defined')|list }}"
+  when: item != None
+  changed_when: False
+  tags: [canary, service, template]
+
+- name: apply canary services
+  command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-canary-service.json
+  with_items: "{{ services|selectattr('canary', 'defined')|list }}"
+  when: item != None and not ansible_check_mode
+  tags: [canary, service]
+
+- name: get canary services
+  command: kubectl --server="{{kubernetes_master}}" get services -l "component!=apiserver,canary==true" -o json
+  register: existing_carnary_services
+  check_mode: no
+  changed_when: False
+  tags: [canary, audit, delete]

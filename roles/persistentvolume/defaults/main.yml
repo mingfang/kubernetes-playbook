@@ -1,0 +1,5 @@
+---
+# defaults file for persistentvolume
+
+persistentVolumes: []
+persistentVolumeClaims: []

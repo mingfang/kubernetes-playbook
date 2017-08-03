@@ -1,0 +1,17 @@
+{
+    "kind": "HorizontalPodAutoscaler",
+    "apiVersion": "autoscaling/v1",
+    "metadata": {
+        "name": "{{item.name}}"
+    },
+    "spec": {
+        "scaleTargetRef": {
+            "kind": "Deployment",
+            "name": "{{item.name}}"
+        },
+       {% for key, value in item.autoscaler.iteritems() %}
+       "{{key}}": {% if value is string %}"{% endif %}{{value}}{% if value is string %}"{% endif %}{% if not loop.last %},
+       {% endif %}
+       {% endfor %}
+    }
+}

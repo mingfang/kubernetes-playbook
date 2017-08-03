@@ -1,0 +1,23 @@
+---
+# tasks file for endpoints
+
+- name: set
+  set_fact:
+    endpoints: "{{ services|selectattr('endpoints', 'defined')|list }}"
+  changed_when: False
+  tags: [always]
+
+- name: template
+  template:
+    src=templates/endpoints.j2
+    dest={{dest_path}}/{{item.name}}-endpoints.json
+  with_items: "{{ endpoints }}"
+  when: item != None
+  changed_when: False
+  tags: [endpoint, template]
+
+- name: apply
+  command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-endpoints.json
+  with_items: "{{ endpoints }}"
+  when: item != None and not ansible_check_mode
+  tags: [endpoint]

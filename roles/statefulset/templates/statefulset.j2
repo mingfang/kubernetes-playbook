@@ -1,0 +1,99 @@
+{
+  "kind": "StatefulSet",
+  "apiVersion": "apps/v1beta1",
+  "metadata": {
+    "name": "{{service_name}}"
+  },
+  "spec": {
+    "serviceName": "{{service_name}}",
+    "replicas": {{item.pod.replicas|default(1)}},
+    {% if item.pod.strategy is defined %}
+    "strategy": {
+      "type": "{{item.pod.strategy}}"
+    },
+    {% endif %}
+    "revisionHistoryLimit": 0,
+    "template": {
+      "metadata": {
+        "labels": {
+          "name": "{{service_name}}",
+          "service": "{{service_name}}"
+        }
+        , "annotations":{
+        {% if item.pod.annotations is defined %}
+          {% for key, value in item.pod.annotations.iteritems() %}
+            "{{ key }}":"{{ value | to_json | regex_replace('(?<!\\\)\"','\\\"') }}"
+            {% if not loop.last %}, {% endif %}
+          {% endfor %}
+        {% endif %}
+        }
+       },
+      "spec": {
+        {% if item.pod.terminationGracePeriodSeconds is defined%}
+        "terminationGracePeriodSeconds": {{ item.pod.terminationGracePeriodSeconds }},
+        {% endif %}
+ 
+        {# Global ConfigMap as env variables #}
+        {% set env = [{"name": "SERVICE_NAME", "value": service_name}, {"name": "LABEL", "value": service_name|upper}] %}
+        {% set global = configmaps|default()|selectattr("name", "equalto", "global")|first|default({"data": []}) %}
+        {% for key in global.data %}
+          {% set _dummy = env.extend([{"name": key|replace("-", "_")|upper, "value": global.data[key]}]) %}
+        {% endfor %}
+
+        {# Sidecar Containers #}
+        {% if sidecars %}
+          {% set _dummy = pod.containers.extend(sidecars) %}
+        {% endif %}
+        "containers": [
+          {% for container in pod.containers %}
+          {% if container.env is defined %}
+            {% set _dummy = container.update({"env": container.env|union(env)}) %}
+          {% else %}
+            {% set _dummy = container.update({"env": env}) %}
+          {% endif %}
+
+          {# Global volume mounts #}
+          {% if volumeMounts is defined %}
+          {% if container.volumeMounts is defined %}
+            {% set _dummy = container.update({"volumeMounts": container.volumeMounts|union(volumeMounts)}) %}
+          {% else %}
+            {% set _dummy = container.update({"volumeMounts": volumeMounts}) %}
+          {% endif %}
+          {% endif %}
+
+          {# Remove scm field #}
+          {% if container.scm is defined %}
+            {% set _dummy = container.pop("scm") %}
+          {% endif %}
+
+          {{container | to_nice_json}}{% if not loop.last %},{% endif %}
+          {% endfor %}
+        ]
+
+        {% if item.pod.initContainers is defined %}
+        ,
+        "initContainers":
+          {{ item.pod.initContainers | to_json }}
+        {% endif %}
+
+        {# Global Volumes #}
+        {% if volumes is defined %}
+          {% set _volumes = volumes %}
+          {% set _dummy = _volumes.extend(item.pod.volumes|default) %}
+          , "volumes": {{ _volumes|to_nice_json}}
+        {% elif item.pod.volumes is defined %}
+          , "volumes": {{item.pod.volumes|to_nice_json}}
+        {% endif %}
+        {% if item.pod.nodeSelector is defined %}
+        , "nodeSelector": {{item.pod.nodeSelector | to_nice_json}}
+        {% endif %}
+        {% if item.pod.hostNetwork is defined %}
+        , "hostNetwork": {{item.pod.hostNetwork | to_nice_json}}
+        {% endif %}
+        {% if item.pod.hostPID is defined %}
+        , "hostPID": {{item.pod.hostPID | to_nice_json}}
+        {% endif %}
+      }
+    }
+  }
+}
