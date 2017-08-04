@@ -2,20 +2,24 @@
   "kind": "Deployment",
   "apiVersion": "extensions/v1beta1",
   "metadata": {
-    "name": "{{service_name}}"
-    {% if canary %}
-    , "labels": {
-      "canary": "true"
+    "name": "{{service_name}}",
+    "namespace": "default",
+    "labels": {
+      "name": "{{service_name}}",
+      "service": "{{service_name}}"
     }
-    {% endif %}
   },
   "spec": {
     "replicas": {{item.pod.replicas|default(1)}},
-    {% if item.pod.strategy is defined %}
-    "strategy": {
-      "type": "{{item.pod.strategy}}"
+    "selector": {
+      "matchLabels": {
+        "name": "{{service_name}}",
+        "service": "{{service_name}}"
+      }
     },
-    {% endif %}
+    "strategy": {
+      "type": "{{item.pod.strategy|default('RollingUpdate')}}"
+    },
     "revisionHistoryLimit": 0,
     "template": {
       "metadata": {
