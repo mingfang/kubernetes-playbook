@@ -1,13 +1,13 @@
 ---
 # tasks file for deployment
 
-- name: set deployments
+- name: set
   set_fact:
     deployments: "{{ services|selectattr('pod', 'defined')|selectattr('stateful', 'undefined')|list }}" 
   changed_when: False
-  tags: [deployment, audit, delete]
+  tags: [always]
 
-- name: deployment template
+- name: template
   template:
     src=templates/deployment.j2
     dest={{dest_path}}/{{item.name}}-deployment.json
@@ -20,13 +20,13 @@
   changed_when: False
   tags: [deployment, template]
 
-- name: apply deployments
+- name: apply
   command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-deployment.json
-  with_items: deployments
+  with_items: "{{ deployments }}"
   when: item != None and not ansible_check_mode
   tags: [deployment]
 
-- name: get deployments
+- name: get
   command: kubectl --server="{{kubernetes_master}}" get deployments -l "canary!=true" -o json
   register: existing_deployments
   check_mode: no
@@ -34,13 +34,13 @@
   tags: [deployment, audit, delete]
 
 - block:
-  - name: audit deployments
+  - name: audit
     debug: msg="deployment {{ item }} was not defined"
     with_items: "{{ undefined_deployments }}"
     when: item != None
     tags: [deployment, audit, delete]
 
-  - name: delete undefined deployments
+  - name: delete
     command: kubectl --server="{{kubernetes_master}}" delete deployment "{{ item }}"
     with_items: "{{ undefined_deployments }}"
     when: item != None and not ansible_check_mode
