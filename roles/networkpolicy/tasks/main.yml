@@ -5,9 +5,9 @@
   set_fact:
     networkpolicies: "{{ services|selectattr('networkpolicy', 'defined')|list }}"
   changed_when: False
-  tags: [deployment, audit, delete]
+  tags: [always]
 
-- name: networkpolicy template
+- name: template
   template:
     src=templates/networkpolicy.j2
     dest={{dest_path}}/{{item.name}}-networkpolicy.json

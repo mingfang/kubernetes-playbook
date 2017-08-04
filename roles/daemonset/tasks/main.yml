@@ -1,7 +1,7 @@
 ---
 # tasks file for daemonset
 
-- name: daemonset template
+- name: template
   template:
     src=templates/daemonset.j2
     dest={{dest_path}}/{{item.name}}-daemonset.json
@@ -10,13 +10,13 @@
   changed_when: False
   tags: [daemonset, template]
 
-- name: apply daemonsets
+- name: apply
   command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-daemonset.json
   with_items: "{{ daemonsets }}"
   when: item != None and not ansible_check_mode
   tags: [daemonset]
 
-- name: get daemonsets
+- name: get
   command: kubectl --server="{{kubernetes_master}}" get daemonsets -o json
   register: existing_daemonsets
   check_mode: no
@@ -24,13 +24,13 @@
   tags: [daemonset, audit, delete]
 
 - block:
-    - name: audit daemonsets
+    - name: audit
       debug: msg="daemonset {{ item }} was not defined"
       with_items: "{{ undefined_daemonsets }}"
       when: item != None
       tags: [daemonset, audit, delete]
 
-    - name: delete undefined daemonsets
+    - name: delete
       command: kubectl --server="{{kubernetes_master}}" delete daemonset "{{ item }}"
       with_items: "{{ undefined_daemonsets }}"
       when: item != None and not ansible_check_mode

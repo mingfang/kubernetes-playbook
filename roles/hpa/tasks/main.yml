@@ -5,7 +5,7 @@
   set_fact:
     autoscalers: "{{ services|selectattr('autoscaler', 'defined')|list }}"
   changed_when: False
-  tags: [hpa, template, audit, delete]
+  tags: [always]
 
 - name: template
   template:

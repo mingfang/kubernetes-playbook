@@ -1,9 +1,7 @@
 ---
 # tasks file for service
 
-# Services
-
-- name: service template
+- name: template
   template:
     src=templates/service.j2
      dest={{dest_path}}/{{item.name}}-service.json
@@ -12,13 +10,13 @@
   changed_when: False
   tags: [service, template]
 
-- name: apply services
+- name: apply
   command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-service.json
   with_items: "{{ services }}"
   when: item != None and not ansible_check_mode
   tags: [service]
 
-- name: get services
+- name: get
   command: kubectl --server="{{kubernetes_master}}" get services -l "component!=apiserver,canary!=true" -o json
   register: existing_services
   check_mode: no
@@ -26,13 +24,13 @@
   tags: [service, audit, delete]
 
 - block:
-  - name: audit services
+  - name: audit
     debug: msg="service {{ item }} was not defined"
     with_items: "{{ undefined_services }}"
     when: item != None
     tags: [service, audit, delete]
 
-  - name: delete undefined services
+  - name: delete
     command: kubectl --server="{{kubernetes_master}}" delete service "{{ item }}"
     with_items: "{{ undefined_services }}"
     when: item != None and not ansible_check_mode

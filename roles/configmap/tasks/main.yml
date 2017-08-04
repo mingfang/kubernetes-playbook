@@ -1,7 +1,7 @@
 ---
 # tasks file for configmap
 
-- name: configmap template
+- name: template
   template:
     src=templates/configmap.j2
     dest={{dest_path}}/{{item.name}}-configmap.json
@@ -10,7 +10,7 @@
   changed_when: False
   tags: [configmap, template]
 
-- name: apply configmaps
+- name: apply
   command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-configmap.json
   with_items: "{{ configmaps }}"
   when: item != None and not ansible_check_mode

@@ -1,7 +1,7 @@
 ---
 # tasks file for limit
 
-- name: limits template
+- name: template
   template:
     src=templates/limits.j2
     dest={{dest_path}}/limits.json
@@ -10,7 +10,7 @@
   changed_when: False
   tags: [limits, template]
 
-- name: apply limits
+- name: apply
   command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/limits.json
   with_items: "{{ limits }}"
   when: item != None and not ansible_check_mode

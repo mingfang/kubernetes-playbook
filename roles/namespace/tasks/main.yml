@@ -1,8 +1,7 @@
 ---
 # tasks file for namespace
 
-# Namespace
-- name: Namespaces template
+- name: template
   template:
     src=templates/namespace.j2
     dest={{dest_path}}/{{item.name}}-namespace.json
@@ -11,7 +10,7 @@
   changed_when: False
   tags: [namespaces, template]
 
-- name: Apply Namespaces
+- name: apply
   command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-namespace.json
   with_items: "{{ namespaces }}"
   when: item != None and not ansible_check_mode

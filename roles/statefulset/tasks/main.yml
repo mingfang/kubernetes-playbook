@@ -1,13 +1,13 @@
 ---
 # tasks file for statefulset
 
-- name: set statefulsets
+- name: set
   set_fact:
     statefulsets: "{{ services|selectattr('stateful', 'defined')|list }}"
   changed_when: False
-  tags: [statefulset, audit, delete]
+  tags: [always]
 
-- name: statefulset template
+- name: template
   template:
     src=templates/statefulset.j2
     dest={{dest_path}}/{{item.name}}-statefulset.json
@@ -19,13 +19,13 @@
   changed_when: False
   tags: [statefulset, template]
 
-- name: apply statefulset
+- name: apply
   command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-statefulset.json
   with_items: "{{ statefulsets }}"
   when: item != None and not ansible_check_mode
   tags: [statefulset]
 
-- name: get statefulsets
+- name: get
   command: kubectl --server="{{kubernetes_master}}" get statefulsets -o json
   register: existing_statefulsets
   check_mode: no
@@ -33,13 +33,13 @@
   tags: [statefulsets, audit, delete]
 
 - block:
-  - name: audit statefulsets
+  - name: audit
     debug: msg="statefulset {{ item }} was not defined"
     with_items: "{{ undefined_statefulsets }}"
     when: item != None
     tags: [statefulsets, audit, delete]
 
-  - name: delete undefined statefulsets
+  - name: delete
     command: kubectl --server="{{kubernetes_master}}" delete statefulsets "{{ item }}"
     with_items: "{{ undefined_statefulsets }}"
     when: item != None and not ansible_check_mode
