@@ -1,0 +1,83 @@
+---
+# common tasks file for resources
+
+#- debug: var=resources
+#  no_log: False
+
+- name: template
+  with_items: "{{resources}}"
+  template:
+    src: "templates/{{resource_type}}.j2"
+    dest: "{{dest_path}}/{{item.name}}-{{resource_type}}.json"
+  changed_when: False
+  check_mode: no
+  tags: [template]
+
+- name: get
+  command: kubectl --server="{{kubernetes_master}}" --namespace="{{namespace.name}}" get {{resource_type}} -l "provider!=kubernetes" -o json
+  register: get_results
+  check_mode: no
+  changed_when: False
+  check_mode: no
+  tags: [audit, delete]
+
+- name: set existing
+  set_fact:
+    existing_resources: "{{(get_results.stdout|from_json)['items']}}"
+  check_mode: no
+  tags: [audit, delete]
+
+#- name: print existing
+#  debug: msg="{{existing_resources|map(attribute='metadata.name')|list}}"
+#  tags: [debug]
+
+- name: write existing
+  with_items: "{{existing_resources}}"
+  copy:
+    content: "{{item|to_nice_json}}"
+    dest: "{{dest_path}}/{{item.metadata.name}}-{{resource_type}}-old.json"
+  changed_when: False
+  check_mode: no
+  tags: [audit]
+
+- name: diff
+  with_items: "{{resources}}"
+  shell: diff -y --suppress-common-lines <(jq -rS . {{dest_path}}/{{item.name}}-{{resource_type}}.json | sed 's|,$||') <(jq -rS . {{dest_path}}/{{item.name}}-{{resource_type}}-old.json | sed 's|,$||' ) | grep -E '\s\|\s|<$' || true
+  args:
+    executable: /bin/bash
+  register: diff_results
+  changed_when: False
+  check_mode: no
+
+#- name: print diff
+#  debug: msg="{{diff_results}}"
+#  tags: [debug]
+
+- name: set new, changes, and deletes
+  set_fact:
+    changed_resources: "{{diff_results.results|rejectattr('stdout', 'equalto', '')|map(attribute='item')|list}}"
+    new_resources: "{{diff_results.results|rejectattr('stderr', 'equalto', '')|map(attribute='item')|list}}"
+    delete_resources: "{{existing_resources|map(attribute='metadata.name')|difference(resources|map(attribute='name'))|list}}"
+
+- name: print change list
+  debug: msg="{{changed_resources|map(attribute='name')|list}}"
+  no_log: False
+
+- name: print new list
+  debug: msg="{{new_resources|map(attribute='name')|list}}"
+  no_log: False
+
+- name: print delete list
+  debug: msg="{{delete_resources}}"
+  no_log: False
+
+- name: apply
+  command: kubectl --server="{{kubernetes_master}}" --namespace="{{namespace.name}}" apply -f {{dest_path}}/{{item.name}}-{{resource_type}}.json
+  with_items: "{{changed_resources + new_resources}}"
+  when: item != None and not ansible_check_mode
+
+- name: delete
+  command: kubectl --server="{{kubernetes_master}}" --namespace="{{namespace.name}}" delete {{resource_type}} "{{item}}"
+  with_items: "{{delete_resources}}"
+  when: item != None and not ansible_check_mode
+  tags: [delete]

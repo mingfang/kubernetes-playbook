@@ -1,45 +1,6 @@
 ---
 # tasks file for hpa
 
-- name: set
-  set_fact:
-    autoscalers: "{{ services|selectattr('autoscaler', 'defined')|list }}"
-  changed_when: False
-  tags: [always]
-
-- name: template
-  template:
-    src=templates/hpa.j2
-    dest={{dest_path}}/{{item.name}}-hpa.json
-  with_items: "{{ autoscalers }}"
-  when: item != None
-  changed_when: False
-  tags: [hpa, template]
-
-- name: apply
-  command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-hpa.json
-  with_items: "{{ autoscalers }}"
-  when: item != None and not ansible_check_mode
+- include: common_tasks.yml
+  when: resources != None
   tags: [hpa]
-
-- name: get
-  command: kubectl --server="{{kubernetes_master}}" get hpa -o json
-  register: existing_hpa
-  check_mode: no
-  changed_when: False
-  tags: [hpa, audit, delete]
-
-- block:
-  - name: audit
-    debug: msg="hpa {{ item }} was not defined"
-    with_items: "{{ undefined_hpa }}"
-    when: item != None
-    tags: [hpa, audit, delete]
-
-  - name: delete
-    command: kubectl --server="{{kubernetes_master}}" delete hpa "{{ item }}"
-    with_items: "{{ undefined_hpa }}"
-    when: item != None and not ansible_check_mode
-    tags: [hpa, delete]
-  vars:
-    undefined_hpa: "{{ (existing_hpa.stdout|from_json)['items']|map(attribute='metadata.name')|difference(autoscalers|map(attribute='name'))|list }}"

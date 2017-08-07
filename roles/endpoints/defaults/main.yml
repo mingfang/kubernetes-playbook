@@ -1,0 +1,6 @@
+---
+# defaults file for endpoints
+
+role_name: "{{role_path|basename}}"
+resource_type: "{{role_name}}"
+resources: "{{ namespace.services|selectattr('endpoints', 'defined')|list }}"

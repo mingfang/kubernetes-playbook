@@ -1,0 +1,5 @@
+---
+# tasks file for podpreset
+
+- include: common_tasks.yml
+  tags: [podpresets]

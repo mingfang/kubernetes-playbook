@@ -1,4 +1,7 @@
 ---
 # defaults file for daemonset
 
-daemonsets: []
+role_name: "{{role_path|basename}}"
+resource_type: "{{role_name}}"
+resources: "{{ namespace.daemonsets|default([]) }}"
+

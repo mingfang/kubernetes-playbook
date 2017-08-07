@@ -1,5 +1,6 @@
 ---
+# tasks file for limit
 
 - include: common_tasks.yml
   when: resources != None
-  tags: [deployment]
+  tags: [limits]

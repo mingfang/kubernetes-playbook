@@ -2,7 +2,8 @@
     "kind": "HorizontalPodAutoscaler",
     "apiVersion": "autoscaling/v1",
     "metadata": {
-        "name": "{{item.name}}"
+        "name": "{{item.name}}",
+         "namespace": "{{namespace.name}}"
     },
     "spec": {
         "scaleTargetRef": {

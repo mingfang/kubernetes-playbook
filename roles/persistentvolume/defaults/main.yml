@@ -1,5 +1,6 @@
 ---
 # defaults file for persistentvolume
 
-persistentVolumes: []
-persistentVolumeClaims: []
+role_name: "{{role_path|basename}}"
+resource_type: "{{role_name}}"
+resources: "{{ namespace.persistentVolumes }}"

@@ -1,4 +1,6 @@
 ---
 # defaults file for statefulset
 
-statefulsets: []
+role_name: "{{role_path|basename}}"
+resource_type: "{{role_name}}"
+resources: "{{ namespace.services|selectattr('stateful', 'defined')|list }}"

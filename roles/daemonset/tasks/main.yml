@@ -1,39 +1,5 @@
 ---
 # tasks file for daemonset
 
-- name: template
-  template:
-    src=templates/daemonset.j2
-    dest={{dest_path}}/{{item.name}}-daemonset.json
-  with_items: "{{ daemonsets }}"
-  when: item != None
-  changed_when: False
-  tags: [daemonset, template]
-
-- name: apply
-  command: kubectl --server="{{kubernetes_master}}" apply -f {{dest_path}}/{{item.name}}-daemonset.json
-  with_items: "{{ daemonsets }}"
-  when: item != None and not ansible_check_mode
+- include: common_tasks.yml
   tags: [daemonset]
-
-- name: get
-  command: kubectl --server="{{kubernetes_master}}" get daemonsets -o json
-  register: existing_daemonsets
-  check_mode: no
-  changed_when: False
-  tags: [daemonset, audit, delete]
-
-- block:
-    - name: audit
-      debug: msg="daemonset {{ item }} was not defined"
-      with_items: "{{ undefined_daemonsets }}"
-      when: item != None
-      tags: [daemonset, audit, delete]
-
-    - name: delete
-      command: kubectl --server="{{kubernetes_master}}" delete daemonset "{{ item }}"
-      with_items: "{{ undefined_daemonsets }}"
-      when: item != None and not ansible_check_mode
-      tags: [daemonset, delete]
-  vars:
-    undefined_daemonsets: "{{ (existing_daemonsets.stdout|from_json)['items']|map(attribute='metadata.name')|difference(daemonsets|map(attribute='name'))|list }}"

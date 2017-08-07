@@ -3,37 +3,41 @@
   connection: local
   gather_facts: False
   strategy: debug
-  no_log: False 
+  no_log: True
   vars:
-    dest_path: /docker
+    max_delete: 10
+    dest_path: /dev/shm #todo
+#    dest_path: /docker
     sidecars: []
+    namespace: "{{namespaces[0]}}" #todo
 
   pre_tasks:
     - name: merge yaml files
-      shell: yamlreader $(find {{dir}} -name "*.yml" -type f) > /dev/shm/services.yml
+      shell: 'yamlreader $(find {{inventory_dir}} -name "*.yml" -type f) > {{dest_path}}/services.yml'
       args:
         executable: /bin/bash
-      when: services is undefined
+      when: namespaces is undefined
       tags: [always]
 
     - name: include vars
       include_vars:
-        file: '/dev/shm/services.yml'
-      when: services is undefined
+        file: '{{dest_path}}/services.yml'
+      when: namespaces is undefined
       tags: [always]
 
   roles:
     - namespace
     - networkpolicy
     - persistentvolume
-    - limit
+    - persistentvolumeclaim
+    - limits
     - configmap
-    - secret
-    - podpreset
+#    - secret #todo
+    - podpresets
     - daemonset
     - service
     - deployment
     - statefulset
     - hpa
-    - endpoint
+#    - endpoints #todo
 
