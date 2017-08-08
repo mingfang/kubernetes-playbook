@@ -42,7 +42,7 @@
 
 - name: diff
   with_items: "{{resources}}"
-  shell: diff -y --suppress-common-lines <(jq -rS . {{dest_path}}/{{item.name}}-{{resource_type}}.json | sed 's|,$||') <(jq -rS . {{dest_path}}/{{item.name}}-{{resource_type}}-old.json | sed 's|,$||' ) | grep -E '\s\|\s|<$' || true
+  shell: diff -y --suppress-common-lines <(jq -rS -f {{playbook_dir}}/normalize.jq {{dest_path}}/{{item.name}}-{{resource_type}}.json | sed 's|,$||') <(jq -rS -f {{playbook_dir}}/normalize.jq {{dest_path}}/{{item.name}}-{{resource_type}}-old.json | sed 's|,$||' ) | grep -E '\s\|\s|<$' || true
   args:
     executable: /bin/bash
   register: diff_results
