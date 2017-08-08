@@ -2,4 +2,4 @@
 # tasks file for podpreset
 
 - include: common_tasks.yml
-  tags: [podpresets]
+  tags: [podpreset, podpresets]

@@ -2,4 +2,4 @@
 # tasks file for daemonset
 
 - include: common_tasks.yml
-  tags: [daemonset]
+  tags: [daemonset, daemonset, ds]

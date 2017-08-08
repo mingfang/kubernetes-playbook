@@ -2,5 +2,4 @@
 # tasks file for endpoints
 
 - include: common_tasks.yml
-#  when: resources != None
-  tags: [endpoint]
+  tags: [endpoint, endpoints, ep]

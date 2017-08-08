@@ -2,5 +2,4 @@
 # tasks file for configmap
 
 - include: common_tasks.yml
-  when: resources != None
-  tags: [configmap, configmaps]
+  tags: [configmap, configmaps, cm]

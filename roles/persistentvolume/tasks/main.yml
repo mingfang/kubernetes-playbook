@@ -2,4 +2,4 @@
 # tasks file for persistentvolume
 
 - include: common_tasks.yml
-  tags: [persistentvolume]
+  tags: [persistentvolume, persistentvolumes, pv]

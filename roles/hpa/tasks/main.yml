@@ -3,4 +3,4 @@
 
 - include: common_tasks.yml
   when: resources != None
-  tags: [hpa]
+  tags: [horizontalpodautoscalers, hpa]
