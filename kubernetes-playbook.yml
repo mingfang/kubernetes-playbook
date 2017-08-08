@@ -3,13 +3,12 @@
   connection: local
   gather_facts: False
   strategy: debug
-  no_log: True
+  no_log: "{{ not ansible_check_mode }}"
   vars:
     max_delete: 10
-    dest_path: /dev/shm #todo
-#    dest_path: /docker
+    dest_path: "{{ansible_check_mode|ternary('/docker', '/dev/shm')}}"
     sidecars: []
-    namespace: "{{namespaces[0]}}" #todo
+    namespace: "{{namespaces[0]}}" #todo - support multiple namespaces
 
   pre_tasks:
     - name: merge yaml files
