@@ -2,4 +2,4 @@
 # tasks file for statefulset
 
 - include: common_tasks.yml
-  tags: [statefulset]
+  tags: [statefulset, statefulsets]

@@ -34,34 +34,14 @@
         {% if item.pod.terminationGracePeriodSeconds is defined%}
         "terminationGracePeriodSeconds": {{ item.pod.terminationGracePeriodSeconds }},
         {% endif %}
- 
-        {# Global ConfigMap as env variables #}
-        {% set env = [{"name": "SERVICE_NAME", "value": item.name}, {"name": "LABEL", "value": item.name|upper}] %}
-        {% set global = configmaps|default()|selectattr("name", "equalto", "global")|first|default({"data": []}) %}
-        {% for key in global.data %}
-          {% set _dummy = env.extend([{"name": key|replace("-", "_")|upper, "value": global.data[key]}]) %}
-        {% endfor %}
 
         {# Sidecar Containers #}
-        {% if sidecars %}
-          {% set _dummy = item.pod.containers.extend(sidecars) %}
-        {% endif %}
         "containers": [
-          {% for container in item.pod.containers %}
-          {% if container.env is defined %}
-            {% set _dummy = container.update({"env": container.env|union(env)}) %}
-          {% else %}
-            {% set _dummy = container.update({"env": env}) %}
-          {% endif %}
+          {% for container in (item.pod.containers + global_podpresets.spec.sidecars|default([])) %}
+            {% set _dummy = container.update({"env": container.env|default([])|union(global_podpresets.spec.env|default([]))|union([{"name": "SERVICE_NAME", "value": item.name}, {"name": "LABEL", "value": item.name|upper}])}) %}
 
           {# Global volume mounts #}
-          {% if volumeMounts is defined %}
-          {% if container.volumeMounts is defined %}
-            {% set _dummy = container.update({"volumeMounts": container.volumeMounts|union(volumeMounts)}) %}
-          {% else %}
-            {% set _dummy = container.update({"volumeMounts": volumeMounts}) %}
-          {% endif %}
-          {% endif %}
+            {% set _dummy = container.update({"volumeMounts": container.volumeMounts|default([])|union(global_podpresets.spec.volumeMounts|default([]))}) %}
 
           {# Remove scm field #}
           {% if container.scm is defined %}
@@ -79,12 +59,8 @@
         {% endif %}
 
         {# Global Volumes #}
-        {% if volumes is defined %}
-          {% set _volumes = volumes %}
-          {% set _dummy = _volumes.extend(item.pod.volumes|default) %}
-          , "volumes": {{ _volumes|to_nice_json}}
-        {% elif item.pod.volumes is defined %}
-          , "volumes": {{item.pod.volumes|to_nice_json}}
+        {% if global_podpresets.spec.volumes is defined or item.pod.volumes is defined %}
+          , "volumes": {{ (item.pod.volumes|default([]) + global_podpresets.spec.volumes|default([]))|to_nice_json}}
         {% endif %}
         {% if item.pod.nodeSelector is defined %}
         , "nodeSelector": {{item.pod.nodeSelector | to_nice_json}}
