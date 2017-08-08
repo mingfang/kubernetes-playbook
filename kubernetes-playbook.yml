@@ -38,5 +38,5 @@
     - deployment
     - statefulset
     - hpa
-#    - endpoints #todo
+    - endpoints
 
