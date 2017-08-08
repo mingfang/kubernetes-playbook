@@ -61,15 +61,16 @@
 
 - name: print change list
   debug: msg="{{changed_resources|map(attribute='name')|list}}"
-  no_log: False
+  no_log: false
 
 - name: print new list
   debug: msg="{{new_resources|map(attribute='name')|list}}"
-  no_log: False
+  no_log: false
 
 - name: print delete list
   debug: msg="{{delete_resources}}"
-  no_log: False
+  when: enable_delete
+  no_log: false
 
 - name: apply
   command: kubectl --server="{{kubernetes_master}}" --namespace="{{namespace.name}}" apply -f {{dest_path}}/{{item.name}}-{{resource_type}}.json
@@ -79,5 +80,5 @@
 - name: delete
   command: kubectl --server="{{kubernetes_master}}" --namespace="{{namespace.name}}" delete {{resource_type}} "{{item}}"
   with_items: "{{delete_resources}}"
-  when: item != None and not ansible_check_mode
+  when: item != None and not ansible_check_mode and enable_delete
   tags: [delete]

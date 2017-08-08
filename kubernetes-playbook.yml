@@ -1,13 +1,13 @@
 - name: Kubernetes Playbook
   hosts: localhost
   connection: local
-  gather_facts: False
+  gather_facts: false
   strategy: debug
   no_log: "{{ not ansible_check_mode }}"
   vars:
-    max_delete: 10
+    enable_delete: true
+    max_delete: 10 #todo
     dest_path: "{{ansible_check_mode|ternary('/docker', '/dev/shm')}}"
-    sidecars: []
     namespace: "{{namespaces[0]}}" #todo - support multiple namespaces
 
   pre_tasks:
@@ -32,7 +32,7 @@
     - limits
     - configmap
 #    - secret #todo
-    - podpresets
+#    - podpresets #todo
     - daemonset
     - service
     - deployment
