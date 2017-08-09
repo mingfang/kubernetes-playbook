@@ -9,16 +9,17 @@
   template:
     src: "templates/{{resource_type}}.j2"
     dest: "{{dest_path}}/{{item.name}}-{{resource_type}}.json"
+  loop_control:
+    label: "{{item.name}}"
   changed_when: False
   check_mode: no
   tags: [template]
 
 - name: get
-  command: kubectl --server="{{kubernetes_master}}" --namespace="{{namespace.name}}" get {{resource_type}} -l "provider!=kubernetes" -o json
+  command: kubectl --server="{{kubernetes_master}}" --namespace="{{namespace.name}}" get {{resource_type}} -l "managed=true" -o json
   register: get_results
   check_mode: no
   changed_when: False
-  check_mode: no
   tags: [audit, delete]
 
 - name: set existing
@@ -36,6 +37,8 @@
   copy:
     content: "{{item|to_nice_json}}"
     dest: "{{dest_path}}/{{item.metadata.name}}-{{resource_type}}-old.json"
+  loop_control:
+    label: "{{item.metadata.name}}"
   changed_when: False
   check_mode: no
   tags: [audit]
@@ -46,6 +49,8 @@
   args:
     executable: /bin/bash
   register: diff_results
+  loop_control:
+    label: "{{item.name}}"
   changed_when: False
   check_mode: no
 
@@ -61,21 +66,20 @@
 
 - name: print change list
   debug: msg="{{changed_resources|map(attribute='name')|list}}"
-  no_log: false
 
 - name: print new list
   debug: msg="{{new_resources|map(attribute='name')|list}}"
-  no_log: false
 
 - name: print delete list
   debug: msg="{{delete_resources}}"
   when: enable_delete
-  no_log: false
 
 - name: apply
   command: kubectl --server="{{kubernetes_master}}" --namespace="{{namespace.name}}" apply -f {{dest_path}}/{{item.name}}-{{resource_type}}.json
   with_items: "{{changed_resources + new_resources}}"
   when: item != None and not ansible_check_mode
+  loop_control:
+    label: "{{item.name}}"
 
 - name: delete
   command: kubectl --server="{{kubernetes_master}}" --namespace="{{namespace.name}}" delete {{resource_type}} "{{item}}"

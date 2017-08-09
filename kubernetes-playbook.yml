@@ -3,7 +3,6 @@
   connection: local
   gather_facts: false
   strategy: debug
-  no_log: "{{ not ansible_check_mode }}"
   vars:
     enable_delete: true
     max_delete: 10 #todo
