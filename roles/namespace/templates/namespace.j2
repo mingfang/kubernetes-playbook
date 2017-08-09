@@ -2,7 +2,11 @@
     "kind": "Namespace",
     "apiVersion": "v1",
     "metadata": {
-        "name": "{{item.name}}"
+        "name": "{{item.name}}",
+        "labels": {
+          "managed": "true"
+        }
+
         {% if item.network_policy is defined %}
         , "annotations":{
             "net.beta.kubernetes.io/network-policy": "{{ item.network_policy | to_json | regex_replace('(?<!\\\)\"','\\\"') }}"

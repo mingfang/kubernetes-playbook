@@ -3,7 +3,10 @@
     "apiVersion": "autoscaling/v1",
     "metadata": {
         "name": "{{item.name}}",
-         "namespace": "{{namespace.name}}"
+         "namespace": "{{namespace.name}}",
+         "labels": {
+           "managed": "true"
+         }
     },
     "spec": {
         "scaleTargetRef": {

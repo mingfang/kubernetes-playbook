@@ -3,19 +3,16 @@
   "apiVersion": "v1",
   "metadata":{
      "name": "{{item.name}}",
-     "namespace": "{{namespace.name}}"
+     "namespace": "{{namespace.name}}",
+     "labels": {
+       "managed": "true"
+     }
       {% if item.annotations is defined %}
       , "annotations":{
         {% for key, value in item.annotations.iteritems() %}
           "{{ key }}":"{{ value | to_json | regex_replace('(?<!\\\)\"','\\\"') }}"
           {% if not loop.last %}, {% endif %}
         {% endfor %}
-      }
-      {% endif %}
-      {% if item.pod is defined and item.pod.canary is defined %}
-      , "labels": {
-        "canary_pct": "{{item.pod.canary.pct_traffic|default('1')}}",
-        "primary_pct": "{{100 - item.pod.canary.pct_traffic|default('1')}}"
       }
       {% endif %}
   },

@@ -2,7 +2,10 @@
     "kind": "PersistentVolumeClaim",
     "apiVersion": "v1",
     "metadata": {
-        "name": "{{item.name}}"
+        "name": "{{item.name}}",
+        "labels": {
+          "managed": "true"
+        }
     },
     "spec": {{item.spec | to_nice_json}}
 }
