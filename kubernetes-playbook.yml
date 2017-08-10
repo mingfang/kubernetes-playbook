@@ -23,6 +23,10 @@
       when: namespaces is undefined
       tags: [always]
 
+    - name: force delete pods
+      shell: kubectl --server="{{kubernetes_master}}" --namespace="{{namespace.name}}" get pods|grep -E "Terminating|ImagePullBackOff|Unknown" | awk '{print $1}'|xargs -I {} kubectl --server="{{kubernetes_master}}" --namespace="{{namespace.name}}" delete pod {} --grace-period=0 --force
+      tags: [force]
+
   roles:
     - namespace
     - networkpolicy
