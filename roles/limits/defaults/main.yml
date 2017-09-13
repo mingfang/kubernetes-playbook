@@ -3,4 +3,4 @@
 
 role_name: "{{role_path|basename}}"
 resource_type: "{{role_name}}"
-resources: "{{ [{'name': namespace.name}|combine({'limits': namespace.limits})] }}"
+resources: "{{ [{'name': namespace.name} | combine({'limits': namespace.limits | default([])})] }}"
