@@ -36,6 +36,10 @@
         "terminationGracePeriodSeconds": {{ item.pod.terminationGracePeriodSeconds }},
         {% endif %}
 
+        {% if item.pod.imagePullSecrets is defined %}
+        "imagePullSecrets" : {{ item.pod.imagePullSecrets | to_json }},
+        {% endif %} 
+
         {# Sidecar Containers #}
         "containers": [
           {% for container in (item.pod.containers + global_podpresets.spec.sidecars|default([])) %}
