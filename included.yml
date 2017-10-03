@@ -1,0 +1,18 @@
+#- debug: var=namespace
+
+#- include_role: name=namespace
+#- include_role: name=networkpolicy
+#- include_role: name=persistentvolume
+#- include_role: name=persistentvolumeclaim
+#- include_role: name=limits
+#- include_role: name=configmap
+##- include_role: name=secret #todo
+##- include_role: name=podpresets #todo
+#- include_role: name=daemonset
+#- include_role: name=service
+#- include_role: name=deployment
+#- include_role: name=statefulset
+#- include_role: name=hpa
+#- include_role: name=endpoints
+
+- include_role: name=main

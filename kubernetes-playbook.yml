@@ -7,7 +7,6 @@
     enable_delete: true
     max_delete: 10 #todo
     dest_path: "{{ansible_check_mode|ternary('/docker', '/dev/shm')}}"
-    namespace: "{{namespaces[0]}}" #todo - support multiple namespaces
 
   pre_tasks:
     - name: merge yaml files
@@ -17,29 +16,19 @@
       when: namespaces is undefined
       tags: [always]
 
-    - name: include vars
+    - name: read merged file
       include_vars:
         file: '{{dest_path}}/services.yml'
       when: namespaces is undefined
       tags: [always]
 
-    - name: force delete pods
-      shell: kubectl --server="{{kubernetes_master}}" --namespace="{{namespace.name}}" get pods|grep -E "Terminating|ImagePullBackOff|Unknown" | awk '{print $1}'|xargs -I {} kubectl --server="{{kubernetes_master}}" --namespace="{{namespace.name}}" delete pod {} --grace-period=0 --force
-      tags: [force]
+#    - name: force delete pods
+#      shell: kubectl --server="{{kubernetes_master}}" --namespace="{{namespace.name}}" get pods|grep -E "Terminating|ImagePullBackOff|Unknown" | awk '{print $1}'|xargs -I {} kubectl --server="{{kubernetes_master}}" --namespace="{{namespace.name}}" delete pod {} --grace-period=0 --force
+#      tags: [force]
 
-  roles:
-    - namespace
-    - networkpolicy
-    - persistentvolume
-    - persistentvolumeclaim
-    - limits
-    - configmap
-#    - secret #todo
-#    - podpresets #todo
-    - daemonset
-    - service
-    - deployment
-    - statefulset
-    - hpa
-    - endpoints
-
+  tasks:
+    - include: included.yml namespace="{{ {'name':namespace_name}|combine(namespaces[namespace_name]) }}"
+      with_items: "{{namespaces|list}}"
+      loop_control:
+        loop_var: namespace_name
+      tags: [always]

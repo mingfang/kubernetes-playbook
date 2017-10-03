@@ -60,7 +60,7 @@
 
 - name: set new, changes, and deletes
   set_fact:
-    changed_resources: "{{diff_results.results|rejectattr('stdout', 'equalto', '')|map(attribute='item')|list}}"
+    changed_resources: "{{diff_results.results|rejectattr('stdout', 'equalto', '')|map(attribute='item')|list}}" #todo: this incorrect includes new list
     new_resources: "{{diff_results.results|rejectattr('stderr', 'equalto', '')|map(attribute='item')|list}}"
     delete_resources: "{{existing_resources|map(attribute='metadata.name')|difference(resources|map(attribute='name'))|list}}"
 
@@ -76,7 +76,7 @@
 
 - name: apply
   command: kubectl --server="{{kubernetes_master}}" --namespace="{{namespace.name}}" apply -f {{dest_path}}/{{item.name}}-{{resource_type}}.json
-  with_items: "{{changed_resources + new_resources}}"
+  with_items: "{{resources}}"
   when: item != None and not ansible_check_mode
   loop_control:
     label: "{{item.name}}"
