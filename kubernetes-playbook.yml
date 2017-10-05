@@ -1,12 +1,12 @@
 - name: Kubernetes Playbook
   hosts: localhost
   connection: local
-  gather_facts: false
+  gather_facts: true
   strategy: debug
   vars:
     enable_delete: true
     max_delete: 10 #todo
-    dest_path: "{{ansible_check_mode|ternary('/docker', '/dev/shm')}}"
+    dest_path: "{{ansible_env.PWD}}/../"
 
   pre_tasks:
     - name: merge yaml files
