@@ -77,6 +77,9 @@
         {% if item.pod.hostPID is defined %}
         , "hostPID": {{item.pod.hostPID | to_nice_json}}
         {% endif %}
+        {% if item.pod.tolerations is defined %}
+        , "tolerations": {{item.pod.tolerations | to_nice_json}}
+        {% endif %}
       }
     }
   }
