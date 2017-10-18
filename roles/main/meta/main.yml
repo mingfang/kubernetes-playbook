@@ -53,17 +53,20 @@ galaxy_info:
     #       Maximum 20 tags per role.
 
 dependencies:
-    - namespace
-    - networkpolicy
-    - persistentvolume
-    - persistentvolumeclaim
-    - limits
-    - configmap
-    - secret
-#    - podpresets #todo
-    - daemonset
-    - service
+#    - namespace
+#    - networkpolicy
+#    - persistentvolume
+#    - persistentvolumeclaim
+#    - limits
+#    - configmap
+#    - secret
+    - serviceaccount
+    - role
+    - rolebinding
+##    - podpresets #todo
+#    - daemonset
+#    - service
     - deployment
-    - statefulset
-    - hpa
-    - endpoints
+#    - statefulset
+#    - hpa
+#    - endpoints
