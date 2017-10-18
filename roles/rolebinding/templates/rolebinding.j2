@@ -1,0 +1,20 @@
+{
+    "kind": "RoleBinding",
+    "apiVersion": "rbac.authorization.k8s.io/v1",
+    "metadata": {
+        "name": "{{ item.name }}",
+        "namespace": "{{ namespace.name }}"
+    },
+    "roleRef": {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "Role",
+        "name": "{{ item.name }}"
+    },
+    "subjects": [
+        {
+            "kind": "ServiceAccount",
+            "name": "{{ item.name }}",
+            "namespace": "{{ namespace.name }}"
+        }
+    ]
+}

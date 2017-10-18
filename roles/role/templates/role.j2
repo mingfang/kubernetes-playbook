@@ -1,0 +1,9 @@
+{
+    "kind": "Role",
+    "apiVersion": "rbac.authorization.k8s.io/v1",
+    "metadata": {
+        "name": "{{ item.name }}",
+        "namespace": "{{ namespace.name }}"
+    },
+    "rules": {{ item.rules | to_nice_json }}
+}
