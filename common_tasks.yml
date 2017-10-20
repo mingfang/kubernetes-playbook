@@ -16,7 +16,7 @@
   tags: [template]
 
 - name: get
-  command: kubectl --server="{{kubernetes_master}}" --namespace="{{namespace.name}}" get {{resource_type}} -l "managed=true" -o json
+  command: kubectl --kubeconfig="{{kubeconfig}}" --namespace="{{namespace.name}}" get {{resource_type}} -l "managed=true" -o json
   register: get_results
   check_mode: no
   changed_when: False
@@ -75,14 +75,14 @@
   when: enable_delete
 
 - name: apply
-  command: kubectl --server="{{kubernetes_master}}" --namespace="{{namespace.name}}" apply -f {{dest_path}}/{{item.name}}-{{resource_type}}.json
+  command: kubectl --kubeconfig="{{kubeconfig}}" --namespace="{{namespace.name}}" apply -f {{dest_path}}/{{item.name}}-{{resource_type}}.json
   with_items: "{{resources}}"
   when: item != None and not ansible_check_mode
   loop_control:
     label: "{{item.name}}"
 
 - name: delete
-  command: kubectl --server="{{kubernetes_master}}" --namespace="{{namespace.name}}" delete {{resource_type}} "{{item}}"
+  command: kubectl --kubeconfig="{{kubeconfig}}" --namespace="{{namespace.name}}" delete {{resource_type}} "{{item}}"
   with_items: "{{delete_resources}}"
   when: item != None and not ansible_check_mode and enable_delete
   tags: [delete]
