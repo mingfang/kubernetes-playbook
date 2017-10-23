@@ -1,0 +1,8 @@
+---
+# tasks file for serviceaccount
+
+- include: common_tasks.yml
+  vars:
+    enable_delete: false
+  when: resources != None
+  tags: [clusterrolebinding, clusterrolebindings]

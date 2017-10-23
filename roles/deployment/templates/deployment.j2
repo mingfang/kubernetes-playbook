@@ -80,7 +80,7 @@
         {% if item.pod.tolerations is defined %}
         , "tolerations": {{item.pod.tolerations | to_nice_json}}
         {% endif %}
-        {% if item.rules is defined %}
+        {% if item.roleBinding is defined %}
         , "serviceAccountName": "{{ item.name }}"
         {% endif %}
       }

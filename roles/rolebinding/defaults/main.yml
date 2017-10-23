@@ -3,4 +3,4 @@
 
 role_name: "{{role_path|basename}}"
 resource_type: "{{role_name}}"
-resources: "{{ namespace.services|selectattr('rules', 'defined')|list }}"
+resources: "{{ (namespace.services|selectattr('roleBinding', 'defined'))|list }}"

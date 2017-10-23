@@ -1,5 +1,5 @@
 {
-    "kind": "RoleBinding",
+    "kind": "ClusterRoleBinding",
     "apiVersion": "rbac.authorization.k8s.io/v1",
     "metadata": {
         "name": "{{ item.name }}",
@@ -7,8 +7,8 @@
     },
     "roleRef": {
         "apiGroup": "rbac.authorization.k8s.io",
-        "kind": "{{ item.roleBinding.kind }}",
-        "name": "{{ item.roleBinding.role }}"
+        "kind": "ClusterRole",
+        "name": "{{ item.clusterRoleBinding }}"
     },
     "subjects": [
         {
