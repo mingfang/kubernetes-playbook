@@ -31,6 +31,9 @@
         {% if item.hostPID is defined %}
         , "hostPID": {{item.hostPID | to_nice_json}}
         {% endif %}
+        {% if item.roleBinding is defined %}
+        , "serviceAccountName": "{{ item.name }}"
+        {% endif %}
       }
     },
     "updateStrategy": {

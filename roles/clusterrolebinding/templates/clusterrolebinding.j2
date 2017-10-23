@@ -3,7 +3,10 @@
     "apiVersion": "rbac.authorization.k8s.io/v1",
     "metadata": {
         "name": "{{ item.name }}",
-        "namespace": "{{ namespace.name }}"
+        "namespace": "{{ namespace.name }}",
+        "labels": {
+            "managed": "true"
+        }
     },
     "roleRef": {
         "apiGroup": "rbac.authorization.k8s.io",
