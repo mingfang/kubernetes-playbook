@@ -3,4 +3,4 @@
 
 role_name: "{{role_path|basename}}"
 resource_type: "{{role_name}}"
-resources: "{{ namespace.services|selectattr('roleBinding', 'defined')|list  + namespace.daemonsets|selectattr('roleBinding', 'defined')|list + namespace.services|selectattr('clusterRoleBinding', 'defined')|list  + namespace.daemonsets|selectattr('clusterRoleBinding', 'defined')|list }}"
+resources: "{{ namespace.services|selectattr('roleBinding', 'defined')|list  + namespace.daemonsets|default([])|selectattr('roleBinding', 'defined')|list + namespace.services|selectattr('clusterRoleBinding', 'defined')|list  + namespace.daemonsets|default([])|selectattr('clusterRoleBinding', 'defined')|list }}"
