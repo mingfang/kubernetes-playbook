@@ -9,6 +9,11 @@
     }
   },
   "spec": {
+    "selector": {
+      "matchLabels": {
+        "service": "{{item.name}}"
+      }
+    },
     "serviceName": "{{item.name}}",
     "podManagementPolicy": "OrderedReady",
     "replicas": {{item.pod.replicas|default(1)}},
