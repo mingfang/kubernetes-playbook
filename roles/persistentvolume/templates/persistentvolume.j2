@@ -1,11 +1,11 @@
+{% set _dummy = item.update({"labels": item.labels|default({})|combine({"managed": "true"})}) %}
+
 {
     "kind": "PersistentVolume",
     "apiVersion": "v1",
     "metadata": {
         "name": "{{item.name}}",
-        "labels": {
-          "managed": "true"
-        }
+        "labels": {{item.labels | to_nice_json}}
 
     },
     "spec": {{item.spec | to_nice_json}}
