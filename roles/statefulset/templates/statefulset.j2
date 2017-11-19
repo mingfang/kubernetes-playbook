@@ -82,13 +82,15 @@
         {% endif %}
       }
     }
-    {% if item.volumeClaimTemplates is defined %}
+    {% if item.pod.volumeClaimTemplates is defined %}
     ,
-    "volumeClaimTemplates": {
-        "metadata": {
-            "name": "{{ item.volumeClaimTemplates.name }}"
+    "volumeClaimTemplates": [
+        {
+            "metadata": {
+                "name": "{{ item.pod.volumeClaimTemplates.name }}"
+            }
         }
-    }
+    ]
     {% endif %} 
   }
 }
