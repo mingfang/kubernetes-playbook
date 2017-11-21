@@ -9,6 +9,11 @@
     }
   },
   "spec": {
+    "selector": {
+      "matchLabels": {
+        "service": "{{item.name}}"
+      }
+    },
     "replicas": {{item.pod.replicas|default(1)}},
     {% if item.pod.strategy is defined %}
     "strategy": {
