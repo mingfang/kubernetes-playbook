@@ -28,6 +28,9 @@
         {% if item.hostNetwork is defined %}
         , "hostNetwork": {{item.hostNetwork | to_nice_json}}
         {% endif %}
+        {% if item.dnsPolicy is defined %}
+        , "dnsPolicy": {{item.dnsPolicy | to_nice_json}}
+        {% endif %}
         {% if item.hostPID is defined %}
         , "hostPID": {{item.hostPID | to_nice_json}}
         {% endif %}
