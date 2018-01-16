@@ -5,10 +5,10 @@
 #  no_log: False
 
 - name: template
-  with_items: "{{resources}}"
   template:
     src: "templates/{{resource_type}}.j2"
     dest: "{{dest_path}}/{{item.name}}-{{resource_type}}.json"
+  with_items: "{{resources}}"
   loop_control:
     label: "{{item.name}}"
   changed_when: False
@@ -16,7 +16,7 @@
   tags: [template]
 
 - name: get
-  command: kubectl --kubeconfig="{{kubeconfig}}" --namespace="{{namespace.name}}" get {{resource_type}} -l "managed=true" -o json
+  raw: kubectl --kubeconfig="{{kubeconfig}}" --namespace="{{namespace.name}}" get {{resource_type}} -l "managed=true" -o json
   register: get_results
   check_mode: no
   changed_when: False
@@ -28,61 +28,24 @@
   check_mode: no
   tags: [audit, delete]
 
-#- name: print existing
-#  debug: msg="{{existing_resources|map(attribute='metadata.name')|list}}"
-#  tags: [debug]
 
-- name: write existing
-  with_items: "{{existing_resources}}"
-  copy:
-    content: "{{item|to_nice_json}}"
-    dest: "{{dest_path}}/{{item.metadata.name}}-{{resource_type}}-old.json"
-  loop_control:
-    label: "{{item.metadata.name}}"
-  changed_when: False
-  check_mode: no
-  tags: [audit]
-
-- name: diff
-  with_items: "{{resources}}"
-  shell: diff -y --suppress-common-lines <(jq -rS -f {{playbook_dir}}/normalize.jq {{dest_path}}/{{item.name}}-{{resource_type}}.json | sed 's|,$||') <(jq -rS -f {{playbook_dir}}/normalize.jq {{dest_path}}/{{item.name}}-{{resource_type}}-old.json | sed 's|,$||' ) | grep -E '\s\|\s|<$' || true
-  args:
-    executable: /bin/bash
-  register: diff_results
-  loop_control:
-    label: "{{item.name}}"
-  changed_when: False
-  check_mode: no
-
-#- name: print diff
-#  debug: msg="{{diff_results}}"
-#  tags: [debug]
-
-- name: set new, changes, and deletes
+- name: set deletes
   set_fact:
-    changed_resources: "{{diff_results.results|rejectattr('stdout', 'equalto', '')|map(attribute='item')|list}}" #todo: this incorrect includes new list
-    new_resources: "{{diff_results.results|rejectattr('stderr', 'equalto', '')|map(attribute='item')|list}}"
     delete_resources: "{{existing_resources|map(attribute='metadata.name')|difference(resources|map(attribute='name'))|list}}"
-
-- name: print change list
-  debug: msg="{{changed_resources|map(attribute='name')|list}}"
-
-- name: print new list
-  debug: msg="{{new_resources|map(attribute='name')|list}}"
 
 - name: print delete list
   debug: msg="{{delete_resources}}"
   when: enable_delete
 
+- name: delete
+  raw: kubectl --kubeconfig="{{kubeconfig}}" --namespace="{{namespace.name}}" delete {{resource_type}} "{{item}}"
+  with_items: "{{delete_resources}}"
+  when: item != None and not ansible_check_mode and enable_delete
+  tags: [delete]
+
 - name: apply
-  command: kubectl --kubeconfig="{{kubeconfig}}" --namespace="{{namespace.name}}" apply -f {{dest_path}}/{{item.name}}-{{resource_type}}.json
+  raw: kubectl --kubeconfig="{{kubeconfig}}" --namespace="{{namespace.name}}" apply -f {{dest_path}}/{{item.name}}-{{resource_type}}.json
   with_items: "{{resources}}"
   when: item != None and not ansible_check_mode
   loop_control:
     label: "{{item.name}}"
-
-- name: delete
-  command: kubectl --kubeconfig="{{kubeconfig}}" --namespace="{{namespace.name}}" delete {{resource_type}} "{{item}}"
-  with_items: "{{delete_resources}}"
-  when: item != None and not ansible_check_mode and enable_delete
-  tags: [delete]
