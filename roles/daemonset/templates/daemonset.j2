@@ -9,6 +9,11 @@
      }
   },
   "spec": {
+    "selector": {
+        "matchLabels": {
+            "daemonset": "{{item.name}}"
+        }
+    },
     "template": {
       "metadata": {
         "name": "{{item.name}}",
