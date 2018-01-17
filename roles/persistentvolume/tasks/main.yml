@@ -2,4 +2,7 @@
 # tasks file for persistentvolume
 
 - include: common_tasks.yml
+  vars:
+    enable_delete: false
+  when: resources != None
   tags: [persistentvolume, persistentvolumes, pv]
