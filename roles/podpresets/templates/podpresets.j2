@@ -2,7 +2,8 @@
   "apiVersion": "settings.k8s.io/v1alpha1",
   "kind": "PodPreset",
   "metadata": {
-     "name": "{{item.name}}"
+     "name": "{{item.name}}",
+    "namespace": "{{namespace.name}}"
   },
   "spec":
     {{ item.spec | to_nice_json }}
