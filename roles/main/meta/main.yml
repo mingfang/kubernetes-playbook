@@ -22,10 +22,11 @@ dependencies:
     - rolebinding
     - clusterrole
     - clusterrolebinding
-##    - podpresets #todo
+#    - podpresets #todo
     - daemonset
     - service
     - deployment
     - statefulset
     - hpa
     - endpoints
+    - customresource

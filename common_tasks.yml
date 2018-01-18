@@ -33,10 +33,6 @@
   set_fact:
     delete_resources: "{{existing_resources|map(attribute='metadata.name')|difference(resources|map(attribute='name'))|list}}"
 
-- name: print delete list
-  debug: msg="{{delete_resources}}"
-  when: enable_delete
-
 - name: delete
   raw: kubectl --kubeconfig="{{kubeconfig}}" --namespace="{{namespace.name}}" delete {{resource_type}} "{{item}}"
   with_items: "{{delete_resources}}"

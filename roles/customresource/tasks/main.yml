@@ -1,0 +1,21 @@
+---
+# tasks file for customresource
+
+- name: template
+  template:
+    src: "templates/{{resource_type}}.j2"
+    dest: "{{dest_path}}/{{item.name}}-{{resource_type}}.yml"
+  with_items: "{{resources}}"
+  loop_control:
+    label: "{{item.name}}"
+  changed_when: False
+  check_mode: no
+  tags: [template]
+
+- name: apply
+  raw: kubectl --kubeconfig="{{kubeconfig}}" --namespace="{{namespace.name}}" apply -f {{dest_path}}/{{item.name}}-{{resource_type}}.yml
+  with_items: "{{resources}}"
+  when: item != None and not ansible_check_mode
+  loop_control:
+    label: "{{item.name}}"
+  tags: [customresource, customresources]
