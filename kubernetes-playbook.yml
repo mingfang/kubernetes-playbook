@@ -10,7 +10,7 @@
 
   pre_tasks:
     - name: merge yaml files
-      shell: 'yamlreader $(find {{inventory_dir}} -name "*.yml" -type f) > {{dest_path}}/services.yml'
+      shell: 'yamlreader $(find {{inventory_dir}} -name "*.yml" -type f ! -path "*/disabled/*") > {{dest_path}}/services.yml'
       args:
         executable: /bin/bash
       when: namespaces is undefined
