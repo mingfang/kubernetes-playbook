@@ -70,6 +70,11 @@
           {{ item.pod.initContainers | to_json }}
         {% endif %}
 
+        {% if item.pod.priorityClassName is defined %}
+        ,
+        "priorityClassName": "{{ item.pod.priorityClassName }}"
+        {% endif %}
+
         {# Global Volumes #}
         {% if global_podpresets.spec.volumes is defined or item.pod.volumes is defined %}
           , "volumes": {{ (item.pod.volumes|default([]) + global_podpresets.spec.volumes|default([]))|to_nice_json}}
