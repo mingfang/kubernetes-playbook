@@ -1,0 +1,5 @@
+---
+# tasks file for configmap
+
+- include: common_tasks.yml
+  tags: [priorityclass, pc]

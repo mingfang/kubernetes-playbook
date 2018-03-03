@@ -27,6 +27,8 @@
 #      tags: [force]
 
   tasks:
+    - include_role: name=priorityclass
+
     - include: included.yml namespace="{{ {'name':namespace_name}|combine(namespaces[namespace_name]) }}"
       with_items: "{{namespaces|list}}"
       loop_control:

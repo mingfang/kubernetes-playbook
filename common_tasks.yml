@@ -16,7 +16,7 @@
   tags: [template]
 
 - name: get
-  raw: kubectl --kubeconfig="{{kubeconfig}}" --namespace="{{namespace.name}}" get {{resource_type}} -l "managed=true" -o json
+  raw: kubectl --kubeconfig="{{kubeconfig}}" --namespace="{{namespace.name|default("default")}}" get {{resource_type}} -l "managed=true" -o json
   register: get_results
   check_mode: no
   changed_when: False
@@ -34,13 +34,13 @@
     delete_resources: "{{existing_resources|map(attribute='metadata.name')|difference(resources|map(attribute='name'))|list}}"
 
 - name: delete
-  raw: kubectl --kubeconfig="{{kubeconfig}}" --namespace="{{namespace.name}}" delete {{resource_type}} "{{item}}"
+  raw: kubectl --kubeconfig="{{kubeconfig}}" --namespace="{{namespace.name|default("default")}}" delete {{resource_type}} "{{item}}"
   with_items: "{{delete_resources}}"
   when: item != None and not ansible_check_mode and enable_delete
   tags: [delete]
 
 - name: apply
-  raw: kubectl --kubeconfig="{{kubeconfig}}" --namespace="{{namespace.name}}" apply -f {{dest_path}}/{{item.name}}-{{resource_type}}.json
+  raw: kubectl --kubeconfig="{{kubeconfig}}" --namespace="{{namespace.name|default("default")}}" apply -f {{dest_path}}/{{item.name}}-{{resource_type}}.json
   with_items: "{{resources}}"
   when: item != None and not ansible_check_mode
   loop_control:

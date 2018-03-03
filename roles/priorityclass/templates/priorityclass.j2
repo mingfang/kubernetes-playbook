@@ -1,0 +1,19 @@
+{
+  "kind": "PriorityClass",
+  "apiVersion": "scheduling.k8s.io/v1alpha1",
+  "metadata": {
+     "name": "{{item.name}}",
+      "labels": {
+        "managed": "true"
+      }
+  },
+  "value": {{ item.value }}
+
+  {% if item.globalDefault is defined %}
+  , "globalDefault": {{ item.globalDefault }}
+  {% endif %}
+
+  {% if item.description is defined %}
+  , "description": "{{ item.description }}"
+  {% endif %}
+}

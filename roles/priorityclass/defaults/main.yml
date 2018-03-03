@@ -1,0 +1,6 @@
+---
+# defaults file for configmap
+
+role_name: "{{role_path|basename}}"
+resource_type: "{{role_name}}"
+resources: "{{ priorityclasses|default([]) }}"
