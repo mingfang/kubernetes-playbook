@@ -20,6 +20,7 @@
   register: get_results
   check_mode: no
   changed_when: False
+  ignore_errors: True
   tags: [audit, delete]
 
 - name: set existing
