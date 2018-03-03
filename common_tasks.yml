@@ -24,11 +24,18 @@
   tags: [audit, delete]
 
 - name: set existing
+  when: get_results|succeeded
   set_fact:
     existing_resources: "{{(get_results.stdout|from_json)['items']}}"
   check_mode: no
   tags: [audit, delete]
 
+- name: fallback existing
+  when: get_results|failed
+  set_fact:
+    existing_resources: []
+  check_mode: no
+  tags: [audit, delete]
 
 - name: set deletes
   set_fact:

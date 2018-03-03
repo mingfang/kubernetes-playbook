@@ -2,7 +2,6 @@
   hosts: localhost
   connection: local
   gather_facts: true
-  strategy: debug
   vars:
     enable_delete: true
     max_delete: 10 #todo
