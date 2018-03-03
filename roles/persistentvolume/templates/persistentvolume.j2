@@ -6,7 +6,13 @@
     "metadata": {
         "name": "{{item.name}}",
         "labels": {{item.labels | to_nice_json}}
-
+        {% if item.annotations is defined %}
+        , "annotations":{
+            {% for key, value in item.annotations.iteritems() %}
+            "{{ key }}":"{{ value | to_json | regex_replace('(?<!\\\)\"','\\\"') }}" {% if not loop.last %},{% endif %}
+            {% endfor %}
+        }
+        {% endif %}
     },
     "spec": {{item.spec | to_nice_json}}
 }
