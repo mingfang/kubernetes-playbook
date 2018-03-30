@@ -45,6 +45,10 @@
         "imagePullSecrets" : {{ item.pod.imagePullSecrets | to_json }},
         {% endif %} 
 
+        {% if item.pod.securityContext is defined %}
+        "securityContext" : {{ item.pod.securityContext | to_json }},
+        {% endif %}
+
         {# Sidecar Containers #}
         "containers": [
           {% for container in (item.pod.containers + global_podpresets.spec.sidecars|default([])) %}
