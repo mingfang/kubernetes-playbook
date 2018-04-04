@@ -10,7 +10,7 @@
   "value": {{ item.value }}
 
   {% if item.globalDefault is defined %}
-  , "globalDefault": {{ item.globalDefault }}
+  , "globalDefault": {{ item.globalDefault|lower }}
   {% endif %}
 
   {% if item.description is defined %}
