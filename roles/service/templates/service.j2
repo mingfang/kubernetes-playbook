@@ -17,30 +17,43 @@
       {% endif %}
   },
   "spec":{
-     {% if item.clusterIP is defined %}
-     "clusterIP": "{{ item.clusterIP }}",
-     {% endif %}
+    {# type, only for NodePort or LoadBalancer #}
+    {% if item.type is defined %}
+    "type": "{{ item.type }}"
 
-     {% if item.ports is defined %}
-     "ports":
-        {{ item.ports | to_nice_json }}
-     {% endif %}
+    {# externalName, not compatible with pods or selectors defined #}
+    {% elif item.externalName is defined %}
+    "type": "ExternalName",
+    "externalName": "{{item.externalName}}"
 
-     {% if item.pod is defined and item.pod.containers is defined %}
-     ,
-     "selector": {
-       "name": "{{item.name}}",
-       "service": "{{item.name}}"
-     }
-     {% elif item.selector is defined%}
-     ,
-     "selector":
-        {{ item.selector | to_nice_json }}
-     {% endif %}
-     
-     {% if item.type is defined %}
-     ,
-     "type": "{{ item.type }}"
-     {% endif %}
+    {% else %}
+    "type": "ClusterIP"
+    {% endif %}
+
+    {# clusterIP, specify your own cluster IP address  #}
+    {# you can create “headless” services by specifying "None" for the cluster IP #}
+    {% if item.clusterIP is defined %}
+    , "clusterIP": "{{ item.clusterIP }}"
+    {% endif %}
+
+    {# For headless services that define selectors, the endpoints controller creates Endpoints records #}
+    {% if item.selector is defined%}
+    , "selector":
+        {{ item.selector | to_json }}
+    {% endif %}
+
+    {# selector if has pods, this is mutually exclusive from selector above #}
+    {% if item.pod is defined and item.pod.containers is defined %}
+    , "selector": {
+        "name": "{{item.name}}",
+        "service": "{{item.name}}"
+    }
+    {%  endif %}
+
+    {# ports #}
+    {% if item.ports is defined %}
+    , "ports":
+        {{ item.ports | to_json }}
+    {% endif %}
   }
 }
