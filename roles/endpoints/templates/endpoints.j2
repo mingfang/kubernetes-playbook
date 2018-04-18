@@ -11,10 +11,10 @@
   "subsets":[
      {
        "addresses":
-         {{ item.endpoints.addresses | to_nice_json }}
+         {{ item.endpoints.addresses | to_json }}
        ,
        "ports": 
-         {{ item.ports | to_nice_json }}
+         {{ item.ports | to_json }}
      }
   ]
 }

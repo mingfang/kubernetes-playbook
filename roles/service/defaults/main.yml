@@ -3,4 +3,4 @@
 
 role_name: "{{role_path|basename}}"
 resource_type: "{{role_name}}"
-resources: "{{ namespace.services|selectattr('ports', 'defined')|list + namespace.services|selectattr('externalName', 'defined')|list }}"
+resources: "{{ namespace.services|default([])|selectattr('ports', 'defined')|list + namespace.services|default([])|selectattr('externalName', 'defined')|list }}"

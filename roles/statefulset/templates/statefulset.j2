@@ -64,7 +64,7 @@
               {% set _dummy = container.pop("scm") %}
             {% endif %}
 
-            {{container | to_nice_json}}{% if not loop.last %},{% endif %}
+            {{container | to_json}}{% if not loop.last %},{% endif %}
           {% endfor %}
         ]
 
@@ -81,17 +81,17 @@
 
         {# Global Volumes #}
         {% if global_podpresets.spec.volumes is defined or item.pod.volumes is defined %}
-          , "volumes": {{ (item.pod.volumes|default([]) + global_podpresets.spec.volumes|default([]))|to_nice_json}}
+          , "volumes": {{ (item.pod.volumes|default([]) + global_podpresets.spec.volumes|default([]))|to_json}}
         {% endif %}
 
         {% if item.pod.nodeSelector is defined %}
-        , "nodeSelector": {{item.pod.nodeSelector | to_nice_json}}
+        , "nodeSelector": {{item.pod.nodeSelector | to_json}}
         {% endif %}
         {% if item.pod.hostNetwork is defined %}
-        , "hostNetwork": {{item.pod.hostNetwork | to_nice_json}}
+        , "hostNetwork": {{item.pod.hostNetwork | to_json}}
         {% endif %}
         {% if item.pod.hostPID is defined %}
-        , "hostPID": {{item.pod.hostPID | to_nice_json}}
+        , "hostPID": {{item.pod.hostPID | to_json}}
         {% endif %}
       }
     }

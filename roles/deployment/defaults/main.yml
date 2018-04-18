@@ -3,7 +3,7 @@
 
 role_name: "{{role_path|basename}}"
 resource_type: "{{role_name}}"
-resources: "{{ namespace.services|selectattr('pod', 'defined')|selectattr('stateful', 'undefined')|list + namespace.services|selectattr('pod', 'defined')|selectattr('stateful', 'defined')|rejectattr('stateful')|list}} "
+resources: "{{ namespace.services|default([])|selectattr('pod', 'defined')|selectattr('stateful', 'undefined')|list + namespace.services|default([])|selectattr('pod', 'defined')|selectattr('stateful', 'defined')|rejectattr('stateful')|list}} "
 global_configmap: "{{ namespace.configmaps|default()|selectattr('name', 'equalto', 'global')|first|default({'data': []}) }}"
 global_podpresets: "{{ namespace.podpresets|default()|selectattr('name', 'equalto', 'global')|first|default({'spec': []}) }}"
 

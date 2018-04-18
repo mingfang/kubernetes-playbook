@@ -3,4 +3,4 @@
 
 role_name: "{{role_path|basename}}"
 resource_type: "{{role_name}}"
-resources: "{{ namespace.services|selectattr('autoscaler', 'defined')|list }}"
+resources: "{{ namespace.services|default([])|selectattr('autoscaler', 'defined')|list }}"
