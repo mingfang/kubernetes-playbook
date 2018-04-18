@@ -9,13 +9,13 @@
       }
   },
   {% if item.data is defined %}
-  "data": {{ item.data | to_nice_json }} 
+  "data": {{ item.data | to_json }}
   {% endif %}
 
   {% if item['from-files'] is defined %}
   "data": {
     {% for from_file in item['from-files'] %}
-    "{{from_file}}": {% filter to_nice_json %}{% include from_file %}{% endfilter %}{% if not loop.last %},
+    "{{from_file}}": {% filter to_json %}{% include from_file %}{% endfilter %}{% if not loop.last %},
     {% endif %}
     {% endfor %}
   }

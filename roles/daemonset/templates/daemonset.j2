@@ -23,21 +23,21 @@
         }
       },
       "spec": {
-        "containers": {{item.containers | to_nice_json}}
+        "containers": {{item.containers | to_json}}
         {% if item.volumes is defined %}
-        , "volumes": {{item.volumes | to_nice_json}}
+        , "volumes": {{item.volumes | to_json}}
         {% endif %}
         {% if item.nodeSelector is defined %}
-        , "nodeSelector": {{item.nodeSelector | to_nice_json}}
+        , "nodeSelector": {{item.nodeSelector | to_json}}
         {% endif %}
         {% if item.hostNetwork is defined %}
-        , "hostNetwork": {{item.hostNetwork | to_nice_json}}
+        , "hostNetwork": {{item.hostNetwork | to_json}}
         {% endif %}
         {% if item.dnsPolicy is defined %}
-        , "dnsPolicy": {{item.dnsPolicy | to_nice_json}}
+        , "dnsPolicy": {{item.dnsPolicy | to_json}}
         {% endif %}
         {% if item.hostPID is defined %}
-        , "hostPID": {{item.hostPID | to_nice_json}}
+        , "hostPID": {{item.hostPID | to_json}}
         {% endif %}
         {% if item.roleBinding is defined or item.clusterRoleBinding is defined %}
         , "serviceAccountName": "{{ item.name }}"
