@@ -23,10 +23,11 @@ dependencies:
     - clusterrole
     - clusterrolebinding
 #    - podpresets #todo
+    - customresourcedefinition
+    - customresource
     - daemonset
     - service
     - deployment
     - statefulset
     - hpa
     - endpoints
-    - customresource

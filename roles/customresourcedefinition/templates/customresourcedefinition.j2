@@ -1,0 +1,12 @@
+{
+  "kind": "CustomResourceDefinition",
+  "apiVersion": "apiextensions.k8s.io/v1beta1",
+  "metadata": {
+     "name": "{{item.name}}",
+      "namespace": "{{namespace.name}}",
+      "labels": {
+        "managed": "true"
+      }
+  },
+  "spec": {{ item.spec | to_json }}
+}
