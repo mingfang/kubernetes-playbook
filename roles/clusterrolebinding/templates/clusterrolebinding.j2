@@ -2,8 +2,7 @@
     "kind": "ClusterRoleBinding",
     "apiVersion": "rbac.authorization.k8s.io/v1",
     "metadata": {
-        "name": "{{ item.name }}",
-        "namespace": "{{ namespace.name }}",
+        "name": "user:{{ namespace.name }}:{{ item.name }}",
         "labels": {
             "managed": "true"
         }
