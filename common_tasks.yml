@@ -7,7 +7,7 @@
 - name: template
   template:
     src: "templates/{{resource_type}}.j2"
-    dest: "{{dest_path}}/{{item.name}}-{{resource_type}}.json"
+    dest: "{{dest_path}}/{{item.name}}-{{resource_type}}-{{namespace.name|default('default')}}.json"
   with_items: "{{resources}}"
   loop_control:
     label: "{{item.name}}"
@@ -48,7 +48,7 @@
   tags: [delete]
 
 - name: apply
-  raw: kubectl --kubeconfig="{{kubeconfig}}" --namespace="{{namespace.name|default("default")}}" apply -f {{dest_path}}/{{item.name}}-{{resource_type}}.json
+  raw: kubectl --kubeconfig="{{kubeconfig}}" --namespace="{{namespace.name|default("default")}}" apply -f {{dest_path}}/{{item.name}}-{{resource_type}}-{{namespace.name|default("default")}}.json
   with_items: "{{resources}}"
   when: item != None and not ansible_check_mode
   loop_control:
