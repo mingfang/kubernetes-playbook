@@ -43,12 +43,12 @@
 
 - name: delete
   raw: kubectl --kubeconfig="{{kubeconfig}}" --namespace="{{namespace.name|default("default")}}" delete {{resource_type}} "{{item}}"
-  with_items: "{{delete_resources}}"
-  when: item != None and not ansible_check_mode and enable_delete
+  with_items: "{{delete_resources if enable_delete else []}}"
+  when: item != None and not ansible_check_mode
   tags: [delete]
 
 - name: apply
-  raw: kubectl --kubeconfig="{{kubeconfig}}" --namespace="{{namespace.name|default("default")}}" apply -f {{dest_path}}/{{item.name}}-{{resource_type}}-{{namespace.name|default("default")}}.json
+  raw: kubectl --kubeconfig="{{kubeconfig}}" apply -f {{dest_path}}/{{item.name}}-{{resource_type}}-{{namespace.name|default("default")}}.json
   with_items: "{{resources}}"
   when: item != None and not ansible_check_mode
   loop_control:
